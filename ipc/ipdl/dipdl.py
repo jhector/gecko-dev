@@ -20,7 +20,7 @@ op.add_option('-v', '--verbose', dest='verbosity', default=1, action='count',
 op.add_option('-o', '--output', dest='dest', default="", help="Store output in this file (stdout is default)")
 op.add_option('-p', dest='pparse', default=0, action='count', help="Add this flag to parse protocols")
 op.add_option('-t', dest='tparse', default=0, action='count', help="Add this flag to parse types (unions, structs)")
-op.add_option('-r', '--resolve', dest='resolve', default="", help="Parse protocols and resolve parameter types"+
+op.add_option('-r', '--resolve', dest='resolve', default="", help="Parse protocols and resolve parameter types "+
   "specified in this file (output from -t option)")
 
 
@@ -100,6 +100,8 @@ for f in files:
 
 final = {}
 if len(protocols): final["protocols"] = protocols
-if len(types): final["types"] = types
+
+if not verbosity == -1:
+  if len(types): final["types"] = types
 
 out.write(json.dumps(final, indent=4))

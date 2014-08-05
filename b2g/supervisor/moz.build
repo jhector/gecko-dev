@@ -4,18 +4,21 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-CONFIGURE_SUBST_FILES += ['installer/Makefile']
+PROGRAM = 'supervisor'
 
-DIRS += ['chrome', 'components', 'locales']
+SOURCES += [
+    'Message.c',
+    'Supervisor.c',
+]
 
-if CONFIG['OS_ARCH'] == 'WINNT':
-    DIRS += ['../xulrunner/tools/redit']
+USE_LIBS += [
+]
 
-if CONFIG['GAIADIR']:
-    DIRS += ['gaia']
+CFLAGS += ['-DDEBUG']
+LDFLAGS += ['-pie', '-fPIE']
 
-DIRS += ['app']
-
-if CONFIG['MOZ_B2G_SUPERVISOR']:
-    DIRS += ['supervisor']
+LOCAL_INCLUDES += [
+    '../../../system/libfdio/include',
+    'include',
+]
 

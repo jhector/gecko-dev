@@ -13,7 +13,7 @@ struct SvMessage;
 enum ioresult;
 
 struct ChannelDataCb {
-  enum ioresult (*OnMessageReceived)(struct SvMessage* msg);
+  enum ioresult (*OnMessageReceived)(struct SvMessage* aMsg);
   void (*OnChannelClosed)();
   void (*OnChannelOpened)();
 };

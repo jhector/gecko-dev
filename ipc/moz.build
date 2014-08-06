@@ -11,6 +11,9 @@ DIRS += [
     'testshell',
 ]
 
+if CONFIG['MOZ_B2G_SUPERVISOR']:
+    DIRS += ['supervisor']
+
 if CONFIG['MOZ_B2G_RIL']:
     DIRS += ['ril']
 

@@ -1357,3 +1357,5 @@ unicode/utypes.h
 #endif
 libutil.h
 unwind.h
+
+fdio/loop.h

@@ -22,6 +22,20 @@ static const struct ChannelData gChannelData = {
   .channelCb = &gChannelDataCb
 };
 
+enum ioresult
+OnMessageReceived(struct SvMessage* aMsg)
+{
+  switch (aMsg->header.type) {
+    case SV_TYPE_HELLO: break;
+    case SV_TYPE_ERROR: break;
+    case SV_TYPE_RES: break;
+    case SV_TYPE_CMD: break;
+    case SV_TYPE_FOP: break;
+  }
+
+  return IO_OK;
+}
+
 int 
 main(int argc, char* argv[])
 {

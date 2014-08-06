@@ -44,6 +44,12 @@ struct SvMessage {
   char data[0];
 };
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 int32_t ValidateMsgHeader(struct SvMessageHeader* aHdr, uint32_t aSize);
+#ifdef __cplusplus
+}
+#endif
 
 #endif // SUPERVISOR_IPC_MESSAGE_H

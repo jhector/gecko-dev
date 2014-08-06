@@ -7,18 +7,18 @@
 PROGRAM = 'supervisor'
 
 SOURCES += [
+    'Channel.c',
+    'Common.c',
     'Message.c',
     'Supervisor.c',
-]
-
-USE_LIBS += [
 ]
 
 CFLAGS += ['-DDEBUG']
 LDFLAGS += ['-pie', '-fPIE']
 
 LOCAL_INCLUDES += [
-    '../../../system/libfdio/include',
+    '../../../platform_system_libfdio/include/', #FIXME: needs to be fixed
+#    '../../../system/libfdio/include',
     'include',
 ]
 

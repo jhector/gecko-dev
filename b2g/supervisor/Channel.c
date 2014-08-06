@@ -29,6 +29,7 @@ enum ioresult EpollCbSockChannel(int32_t aFd, uint32_t aEvent, void* aData);
 
 enum ioresult ChannelRead(struct ChannelDataCb* aCbData);
 void ChannelOpen(struct ChannelDataCb* aCbData);
+void ChannelClose(struct ChannelDataCb* aCbData);
 
 // TODO: docu
 enum ioresult
@@ -61,7 +62,7 @@ EpollCbSockChannel(int32_t aFd, uint32_t aEvent, void* aData)
 
   enum ioresult res = IO_OK;
   if (aEvent & EPOLLHUP) {
-    // TODO: close channel
+    ChannelClose(cbData);
   } else if (aEvent & EPOLLIN) {
     res = ChannelRead(cbData);
   }
@@ -163,6 +164,52 @@ exit_close:
 }
 
 // TODO: docu
+int32_t
+ChannelWrite(struct SvMessage* aMsg)
+{
+  // TODO: license, taken more or less from chromium code
+  struct msghdr msgh = {0};
+
+  aMsg->header.magic = SV_MESSAGE_MAGIC;
+
+  static const int32_t tmp = CMSG_SPACE(sizeof(int32_t[SV_MESSAGE_MAX_FDS]));
+  char buf[tmp];
+
+  if (aMsg->header.nfds > 0) {
+    struct cmsghdr* cmsg;
+    const int32_t nfds = aMsg->header.nfds;
+
+    if (nfds > SV_MESSAGE_MAX_FDS) {
+      return 0;
+    }
+
+    msgh.msg_control = buf;
+    msgh.msg_controllen = CMSG_SPACE(sizeof(int32_t)*nfds);
+    cmsg = CMSG_FIRSTHDR(&msgh);
+    cmsg->cmsg_level = SOL_SOCKET;
+    cmsg->cmsg_type = SCM_RIGHTS;
+    cmsg->cmsg_len = CMSG_LEN(sizeof(int32_t)*nfds);
+
+    int32_t* ptr = (int32_t*)CMSG_DATA(cmsg);
+    int32_t i = 0;
+    for (; i<nfds; i++) {
+      *(ptr++) = aMsg->fds[i];
+    }
+
+    aMsg->header.nfds = nfds;
+    msgh.msg_controllen = cmsg->cmsg_len;
+  }
+
+  int32_t size = sizeof(struct SvMessage) + aMsg->header.size;
+  struct iovec iov = {(char*)aMsg, size};
+
+  msgh.msg_iov = &iov;
+  msgh.msg_iovlen = 1;
+
+  return HANDLE_EINTR(sendmsg(sSockChannel, &msgh, MSG_DONTWAIT));
+}
+
+// TODO: docu
 void
 ChannelOpen(struct ChannelDataCb* aCbData)
 {
@@ -207,6 +254,25 @@ error_close:
 error:
   // TODO: log err
   return;
+}
+
+// TODO: docu
+void
+ChannelClose(struct ChannelDataCb* aCbData)
+{
+  remove_fd_from_epoll_loop(sSockChannel);
+
+  HANDLE_EINTR(close(sSockChannel));
+  sSockChannel = -1;
+
+  if (aCbData && aCbData->OnChannelClosed) {
+    aCbData->OnChannelClosed();
+  }
+
+  if (add_fd_to_epoll_loop(sSockListen, EPOLLIN,
+        EpollCbSockListen, aCbData) < 0) {
+    // TODO: handle
+  }
 }
 
 // TODO: docu

@@ -31,5 +31,7 @@ struct ChannelData {
 
 enum ioresult ChannelInit(void* aData);
 
+int32_t ChannelWrite(struct SvMessage* aMsg);
+
 #endif // SUPERVISOR_IPC_CHANNEL_H
 

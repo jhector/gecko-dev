@@ -25,7 +25,7 @@ static const struct ChannelData gChannelData = {
 int 
 main(int argc, char* argv[])
 {
-  gChannelData.channelInfo->path = "/dev/socket/supervisor";
+  gChannelData.channelInfo->path = "/dev/socket/supervisord";
   gChannelData.channelInfo->owner = 1000;
   gChannelData.channelInfo->group = 1000;
 

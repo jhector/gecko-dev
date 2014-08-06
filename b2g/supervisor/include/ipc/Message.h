@@ -44,4 +44,6 @@ struct SvMessage {
   char data[0];
 };
 
+int32_t ValidateMsgHeader(struct SvMessageHeader* aHdr, uint32_t aSize);
+
 #endif // SUPERVISOR_IPC_MESSAGE_H

@@ -18,6 +18,7 @@
 
 /* from b2g/supervisor/include */
 #include <utils/Common.h>
+#include <ipc/Message.h>
 #include <ipc/Channel.h>
 
 static int32_t sSockListen = -1;
@@ -26,10 +27,11 @@ static int32_t sSockChannel = -1;
 enum ioresult EpollCbSockListen(int32_t aFd, uint32_t aEvent, void* aData);
 enum ioresult EpollCbSockChannel(int32_t aFd, uint32_t aEvent, void* aData);
 
+enum ioresult ChannelRead(struct ChannelDataCb* aCbData);
 void ChannelOpen(struct ChannelDataCb* aCbData);
 
 // TODO: docu
-enum ioresult 
+enum ioresult
 EpollCbSockListen(int32_t aFd, uint32_t aEvent, void* aData)
 {
   if (aFd != sSockListen) {
@@ -51,11 +53,118 @@ EpollCbSockListen(int32_t aFd, uint32_t aEvent, void* aData)
 enum ioresult
 EpollCbSockChannel(int32_t aFd, uint32_t aEvent, void* aData)
 {
-  return IO_OK;
+  if (aFd != sSockChannel) {
+    return IO_ABORT;
+  }
+
+  struct ChannelDataCb* cbData = (struct ChannelDataCb*)aData;
+
+  enum ioresult res = IO_OK;
+  if (aEvent & EPOLLHUP) {
+    // TODO: close channel
+  } else if (aEvent & EPOLLIN) {
+    res = ChannelRead(cbData);
+  }
+
+  return res;
 }
 
 // TODO: docu
-void ChannelOpen(struct ChannelDataCb* aCbData)
+enum ioresult
+ChannelRead(struct ChannelDataCb *aCbData)
+{
+  if (sSockChannel < 0) {
+    return IO_ABORT;
+  }
+
+  // TODO: license, this code is more or less from chromium
+  int32_t bytes_read = 0;
+  int32_t i = 0;
+
+  struct msghdr hdr = {0};
+  struct iovec data = {0};
+
+  char ctrl[sizeof(struct cmsghdr)*sizeof(int32_t)*SV_MESSAGE_MAX_FDS] = {0};
+  char input[SV_MESSAGE_MAX_RAW] = {0};
+
+  data.iov_base = input;
+  data.iov_len = sizeof(input);
+
+  hdr.msg_iov = &data;
+  hdr.msg_iovlen = 1;
+  hdr.msg_control = ctrl;
+  hdr.msg_controllen = sizeof(ctrl);
+
+  const int32_t* fds = NULL;
+  uint32_t nfds = 0;
+
+  bytes_read = HANDLE_EINTR(recvmsg(sSockChannel, &hdr, MSG_DONTWAIT));
+
+  if (bytes_read < 0) {
+    if (errno == EAGAIN) {
+      return IO_OK;
+    } else {
+      return IO_ABORT;
+    }
+  } else if (bytes_read == 0) {
+    // TODO: close channel
+    return IO_OK;
+  }
+
+  /* see if we have a control message and extract file descriptors */
+  if (hdr.msg_controllen > 0) {
+    struct cmsghdr* cmsg = CMSG_FIRSTHDR(&hdr);
+    for (; cmsg; cmsg = CMSG_NXTHDR(&hdr, cmsg)) {
+      if (cmsg->cmsg_level == SOL_SOCKET &&
+          cmsg->cmsg_type == SCM_RIGHTS) {
+        const uint32_t len = cmsg->cmsg_len - CMSG_LEN(0);
+        // TODO: check mod 4?
+        fds = (int32_t*)(CMSG_DATA(cmsg));
+        nfds = len / 4;
+
+        if (hdr.msg_flags & MSG_CTRUNC) {
+          goto exit_close;
+        }
+        break;
+      }
+    }
+  }
+
+  if (nfds > SV_MESSAGE_MAX_FDS) {
+    goto exit_close;
+  }
+
+  /* we assume that the start of the buffer is the start of the message */
+  struct SvMessage* msg = (struct SvMessage*)input;
+
+  if (ValidateMsgHeader(&msg->header, bytes_read) < 0) {
+    goto exit_close;
+  }
+
+  /* replace header information regarding fds */
+  for (i=0; (i<nfds) && (i<SV_MESSAGE_MAX_FDS); i++) {
+    msg->fds[i] = fds[i];
+  }
+
+  msg->header.nfds = nfds;
+
+  if (aCbData && aCbData->OnMessageReceived) {
+    return aCbData->OnMessageReceived(msg);
+  }
+
+  return IO_OK;
+
+exit_close:
+  for (i=0; i<nfds; i++) {
+    HANDLE_EINTR(close(fds[i]));
+  }
+
+  return IO_OK; // TODO: check this
+}
+
+// TODO: docu
+void
+ChannelOpen(struct ChannelDataCb* aCbData)
 {
   char* err = NULL;
 
@@ -115,7 +224,7 @@ ChannelInit(void *aData)
   }
 
   unlink(info->channelInfo->path);
-  
+
   if ((sSockListen = socket(PF_UNIX, SOCK_STREAM, 0)) < 0) {
     err = "failed to create UNIX socket";
     goto error;
@@ -129,7 +238,7 @@ ChannelInit(void *aData)
   addr.sun_family = AF_UNIX;
   strncpy(addr.sun_path, info->channelInfo->path, UNIX_PATH_MAX-1);
 
-  if (bind(sSockListen, (struct sockaddr*)&addr, 
+  if (bind(sSockListen, (struct sockaddr*)&addr,
         sizeof(struct sockaddr_un)) != 0) {
     err = "failed to bind() on socket";
     goto error_close;
@@ -151,7 +260,7 @@ ChannelInit(void *aData)
     err = "failed to register epoll event";
     goto error_close;
   }
-  
+
   return IO_OK;
 
 error_close:

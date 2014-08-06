@@ -6,3 +6,32 @@
 
 /* from b2g/supervisor/include */
 #include <ipc/Message.h>
+
+/**
+ *
+ * @param aHdr message header from child
+ * @param aSize number of bytes from socket
+ *
+ */
+int32_t
+ValidateMsgHeader(struct SvMessageHeader* aHdr, uint32_t aSize)
+{
+  if (!aHdr || aSize == 0) {
+    return -1;
+  }
+
+  if (aHdr->magic != SV_MESSAGE_MAGIC) {
+    return -1;
+  }
+
+  if (aSize < sizeof(struct SvMessage)) {
+    return -1;
+  }
+
+  if (aHdr->size > (aSize-sizeof(struct SvMessage)) ||
+      (int32_t)aHdr->size < 0) {
+    return -1;
+  }
+
+  return 0;
+}

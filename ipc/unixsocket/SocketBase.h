@@ -21,6 +21,8 @@
 using namespace mozilla::tasktracer;
 #endif
 
+typedef ssize_t (*SocketHandler)(ssize_t, void*, size_t);
+
 namespace mozilla {
 namespace ipc {
 
@@ -332,8 +334,12 @@ public:
       nsAutoPtr<UnixSocketRawData> incoming(
         new UnixSocketRawData(mMaxReadSize));
 
-      ssize_t res =
-        TEMP_FAILURE_RETRY(read(aFd, incoming->mData, incoming->mSize));
+      ssize_t res = 0;
+      if (mSocketReader) {
+        res = mSocketReader(aFd, incoming->mData, incoming->mSize);
+      } else {
+        res = TEMP_FAILURE_RETRY(read(aFd, incoming->mData, incoming->mSize));
+      }
 
       if (res < 0) {
         if (errno == EAGAIN || errno == EWOULDBLOCK) {
@@ -382,7 +388,12 @@ public:
       const uint8_t* data = outgoing->mData + outgoing->mCurrentWriteOffset;
       size_t size = outgoing->mSize - outgoing->mCurrentWriteOffset;
 
-      ssize_t res = TEMP_FAILURE_RETRY(write(aFd, data, size));
+      ssize_t res = 0;
+      if (mSocketWriter) {
+        res = mSocketWriter(aFd, (void*)data, size);
+      } else {
+        res = TEMP_FAILURE_RETRY(write(aFd, data, size));
+      }
 
       if (res < 0) {
         if (errno == EAGAIN || errno == EWOULDBLOCK) {
@@ -407,6 +418,12 @@ public:
     return NS_OK;
   }
 
+  void SetSocketHandler(SocketHandler aReader, SocketHandler aWriter)
+  {
+    mSocketReader = aReader;
+    mSocketWriter = aWriter;
+  }
+
 protected:
   SocketIOBase(size_t aMaxReadSize);
 
@@ -417,6 +434,9 @@ private:
    * Raw data queue. Must be pushed/popped from I/O thread only.
    */
   nsTArray<UnixSocketRawData*> mOutgoingQ;
+
+  SocketHandler mSocketReader;
+  SocketHandler mSocketWriter;
 };
 
 //

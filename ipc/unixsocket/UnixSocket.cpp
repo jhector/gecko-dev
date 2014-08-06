@@ -63,6 +63,8 @@ public:
 
   void Send(UnixSocketRawData* aData);
 
+  void SetSocketHandler(SocketHandler aReader, SocketHandler aWriter);
+
   // I/O callback methods
   //
 
@@ -292,6 +294,13 @@ UnixSocketConsumerIO::Send(UnixSocketRawData* aData)
 {
   EnqueueData(aData);
   AddWatchers(WRITE_WATCHER, false);
+}
+
+void
+UnixSocketConsumerIO::SetSocketHandler(SocketHandler aReader,
+                                       SocketHandler aWriter)
+{
+  SocketIOBase::SetSocketHandler(aReader, aWriter);
 }
 
 void
@@ -606,7 +615,9 @@ UnixSocketConsumer::GetSocketAddr(nsAString& aAddrStr)
 bool
 UnixSocketConsumer::ConnectSocket(UnixSocketConnector* aConnector,
                                   const char* aAddress,
-                                  int aDelayMs)
+                                  int aDelayMs,
+                                  SocketHandler aReader,
+                                  SocketHandler aWriter)
 {
   MOZ_ASSERT(aConnector);
   MOZ_ASSERT(NS_IsMainThread());
@@ -621,6 +632,8 @@ UnixSocketConsumer::ConnectSocket(UnixSocketConnector* aConnector,
   nsCString addr(aAddress);
   MessageLoop* ioLoop = XRE_GetIOMessageLoop();
   mIO = new UnixSocketConsumerIO(ioLoop, this, connector.forget(), addr);
+  mIO->SetSocketHandler(aReader, aWriter);
+
   SetConnectionStatus(SOCKET_CONNECTING);
   if (aDelayMs > 0) {
     DelayedConnectTask* connectTask = new DelayedConnectTask(mIO);

@@ -147,6 +147,8 @@ SocketIOBase::HasPendingData() const
 
 SocketIOBase::SocketIOBase(size_t aMaxReadSize)
   : mMaxReadSize(aMaxReadSize)
+  , mSocketReader(nullptr)
+  , mSocketWriter(nullptr)
 {
   MOZ_ASSERT(mMaxReadSize);
 }

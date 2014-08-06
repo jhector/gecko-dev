@@ -136,7 +136,9 @@ public:
    */
   bool ConnectSocket(UnixSocketConnector* aConnector,
                      const char* aAddress,
-                     int aDelayMs = 0);
+                     int aDelayMs = 0,
+                     SocketHandler aReader = nullptr,
+                     SocketHandler aWriter = nullptr);
 
   /**
    * Starts a task on the socket that will try to accept a new connection in a

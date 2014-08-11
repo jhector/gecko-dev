@@ -52,6 +52,8 @@ struct SvMessage {
 extern "C" {
 #endif
 int32_t ValidateMsgHeader(struct SvMessageHeader* aHdr, uint32_t aSize);
+
+int32_t ReadString(void* aIter, char** aOut, uint32_t* aLen);
 #ifdef __cplusplus
 }
 #endif

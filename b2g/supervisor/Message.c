@@ -3,6 +3,7 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+#include <string.h>
 
 /* from b2g/supervisor/include */
 #include <ipc/Message.h>
@@ -32,6 +33,26 @@ ValidateMsgHeader(struct SvMessageHeader* aHdr, uint32_t aSize)
       (int32_t)aHdr->size < 0) {
     return -1;
   }
+
+  return 0;
+}
+
+/**
+ *
+ *
+ */
+int32_t
+ReadString(void* aIter, char** aOut, uint32_t* aLen)
+{
+  if (!aOut || !aLen || !aIter) {
+    return -1;
+  }
+
+  *aOut = (char*)aIter;
+  *aLen = strlen(aIter);
+
+  /* let the iterator point after the null terminator */
+  aIter += (*aLen)+1;
 
   return 0;
 }

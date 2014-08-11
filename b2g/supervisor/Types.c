@@ -13,7 +13,9 @@
 void
 HandleCmdWifi(struct SvMessage* aMsg)
 {
-  
+#ifdef DEBUG
+  printf("Got wifi command: %s\n", aMsg->data);
+#endif
 }
 
 void
@@ -22,5 +24,7 @@ HandleActionCmd(struct SvMessage* aMsg)
 #ifdef DEBUG
   printf("Got command: %d\n", aMsg->header.opt);
 #endif
-
+  switch(aMsg->header.opt) {
+    case SV_CMD_WIFI: HandleCmdWifi(aMsg); break;
+  }
 }

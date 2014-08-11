@@ -10,6 +10,12 @@
 #include "js/CharacterEncoding.h"
 #include "mozilla/dom/network/NetUtils.h"
 
+#ifdef MOZ_B2G_SUPERVISOR
+#include "mozilla/ipc/SupervisorChild.h"
+
+using namespace mozilla::ipc;
+#endif
+
 using namespace mozilla::dom;
 
 #define BUFFER_SIZE        4096
@@ -439,7 +445,11 @@ bool WpaSupplicant::ExecuteCommand(CommandOptions aOptions,
   } else if (aOptions.mCmd.EqualsLiteral("close_supplicant_connection")) {
     mImpl->do_wifi_close_supplicant_connection(aInterface.get());
   } else if (aOptions.mCmd.EqualsLiteral("load_driver")) {
+#ifdef MOZ_B2G_SUPERVISOR
+    aResult.mStatus = SupervisorChild::Instance()->SendCmdWifi("load_driver");
+#else
     aResult.mStatus = mImpl->do_wifi_load_driver();
+#endif
   } else if (aOptions.mCmd.EqualsLiteral("unload_driver")) {
     aResult.mStatus = mImpl->do_wifi_unload_driver();
   } else if (aOptions.mCmd.EqualsLiteral("start_supplicant")) {

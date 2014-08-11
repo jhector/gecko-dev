@@ -151,6 +151,12 @@ extern nsresult nsStringInputStreamConstructor(nsISupports *, REFNSIID, void **)
 
 #include "gfxPlatform.h"
 
+#ifdef MOZ_B2G_SUPERVISOR
+#include "mozilla/ipc/SupervisorChild.h"
+
+using mozilla::ipc::SupervisorChild;
+#endif
+
 using namespace mozilla;
 using base::AtExitManager;
 using mozilla::ipc::BrowserProcessSubThread;
@@ -519,6 +525,12 @@ NS_InitXPCOM2(nsIServiceManager* *result,
             return NS_ERROR_FAILURE;
 
         sIOThread = ioThread.release();
+
+#ifdef MOZ_B2G_SUPERVISOR
+        if (!SupervisorChild::Instance()->Connect("/dev/socket/supervisord")) {
+            return NS_ERROR_FAILURE;
+        }
+#endif
     }
 
     // Establish the main thread here.

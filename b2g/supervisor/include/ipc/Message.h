@@ -29,6 +29,10 @@ enum SvTypeError {
   SV_ERROR_MEMORY
 };
 
+enum SvTypeCmd {
+  SV_CMD_WIFI
+};
+
 struct SvMessageHeader {
   uint32_t magic; 
   uint32_t id;

@@ -446,7 +446,7 @@ bool WpaSupplicant::ExecuteCommand(CommandOptions aOptions,
     mImpl->do_wifi_close_supplicant_connection(aInterface.get());
   } else if (aOptions.mCmd.EqualsLiteral("load_driver")) {
 #ifdef MOZ_B2G_SUPERVISOR
-    aResult.mStatus = SupervisorChild::Instance()->SendCmdWifi("load_driver");
+    aResult.mStatus = SupervisorChild::Instance()->SendCmdWifi("wifi_load_driver");
 #else
     aResult.mStatus = mImpl->do_wifi_load_driver();
 #endif

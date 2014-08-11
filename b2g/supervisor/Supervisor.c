@@ -8,6 +8,7 @@
 /* from b2g/supervisor/include */
 #include <ipc/Channel.h>
 #include <ipc/Message.h>
+#include <ipc/Types.h>
 
 static const struct ChannelDataCb gChannelDataCb = {
   .OnMessageReceived = NULL,
@@ -29,7 +30,7 @@ OnMessageReceived(struct SvMessage* aMsg)
     case SV_TYPE_HELLO: break;
     case SV_TYPE_ERROR: break;
     case SV_TYPE_RES: break;
-    case SV_TYPE_CMD: break;
+    case SV_TYPE_CMD: HandleActionCmd(aMsg); break;
     case SV_TYPE_FOP: break;
   }
 

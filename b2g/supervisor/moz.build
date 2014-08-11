@@ -11,6 +11,7 @@ SOURCES += [
     'Common.c',
     'Message.c',
     'Supervisor.c',
+    'Types.c',
 ]
 
 CFLAGS += ['-DDEBUG']

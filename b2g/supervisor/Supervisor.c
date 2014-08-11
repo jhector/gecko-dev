@@ -5,13 +5,19 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 #include <fdio/loop.h>
 
+#ifdef DEBUG
+#include <stdio.h>
+#endif
+
 /* from b2g/supervisor/include */
 #include <ipc/Channel.h>
 #include <ipc/Message.h>
 #include <ipc/Types.h>
 
+enum ioresult OnMessageReceived(struct SvMessage* aMsg);
+
 static const struct ChannelDataCb gChannelDataCb = {
-  .OnMessageReceived = NULL,
+  .OnMessageReceived = OnMessageReceived,
   .OnChannelOpened = NULL,
   .OnChannelClosed = NULL
 };
@@ -26,6 +32,11 @@ static const struct ChannelData gChannelData = {
 enum ioresult
 OnMessageReceived(struct SvMessage* aMsg)
 {
+#ifdef DEBUG
+  printf("Got message, type: %d, opt: %d\n", aMsg->header.type, 
+      aMsg->header.opt);
+#endif
+
   switch (aMsg->header.type) {
     case SV_TYPE_HELLO: break;
     case SV_TYPE_ERROR: break;

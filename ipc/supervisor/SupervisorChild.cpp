@@ -37,6 +37,45 @@ SupervisorChild::~SupervisorChild()
 }
 
 bool
+SupervisorChild::SendCmdWifi(const char* aCmd)
+{
+  bool res = false;
+  struct SvMessage* msg = NULL;
+
+  int32_t length = strlen(aCmd);
+  int32_t size = length + sizeof(struct SvMessage) + 1;
+
+  if (length <= 0) {
+    return false;
+  }
+
+  msg = (struct SvMessage*)calloc(1, size);
+  if (!msg) {
+    return false;
+  }
+
+  msg->header.type = SV_TYPE_CMD;
+  msg->header.opt = SV_CMD_WIFI;
+
+  strncpy(&msg->data[0], aCmd, length);
+
+  msg->header.size = length + 1;
+
+  // TODO: send and wait for response
+  if (SendRaw(msg)) {
+    res = true;
+  } else {
+    res = false;
+  }
+#if DEBUG
+  printf("Send wifi command...\n");
+  sleep(20);
+#endif
+  free(msg);
+  return res;
+}
+
+bool
 SupervisorChild::SendRaw(struct SvMessage* aMsg)
 {
   aMsg->header.magic = SV_MESSAGE_MAGIC;

@@ -151,7 +151,7 @@ MarionetteComponent.prototype = {
         // keepWhenOffline=true so that it still work when offline (local).
         // This allows the following attempt by Marionette to open a socket
         // to succeed.
-        let insaneSacrificialGoat = new ServerSocket(666, Ci.nsIServerSocket.KeepWhenOffline, 4);
+        let insaneSacrificialGoat = new ServerSocket(6666, Ci.nsIServerSocket.KeepWhenOffline, 4);
         insaneSacrificialGoat.asyncListen(this);
       }
 

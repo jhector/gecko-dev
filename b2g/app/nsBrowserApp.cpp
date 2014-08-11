@@ -42,6 +42,11 @@
 # include <binder/ProcessState.h>
 #endif
 
+#ifdef MOZ_B2G_SUPERVISOR
+#include <sys/types.h>
+#include <private/android_filesystem_config.h>
+#endif
+
 #include "mozilla/Telemetry.h"
 #include "mozilla/WindowsDllBlocklist.h"
 
@@ -179,6 +184,29 @@ int main(int argc, _CONST char* argv[])
 {
 #ifndef MOZ_B2G_LOADER
   char exePath[MAXPATHLEN];
+#endif
+
+#ifdef MOZ_B2G_SUPERVISOR
+  // add ourself to the correct groups
+  gid_t group_list[] = {AID_SYSTEM,
+                        AID_MOUNT,
+                        AID_INPUT,
+                        AID_SHELL,
+                        AID_INET,
+                        AID_NET_BT,
+                        AID_NET_ADMIN};
+  size_t list_size = sizeof(group_list)/sizeof(group_list[0]);
+
+  if (setgroups(list_size, group_list) != 0) {
+    Output("Couldn't setgroups().\n");
+    return 255;
+  }
+
+  // drop privileges to system
+  if (setresuid(AID_SYSTEM, AID_SYSTEM, AID_SYSTEM) != 0) {
+    Output("Couldn't setresuid() to system.\n");
+    return 255;
+  }
 #endif
 
 #ifdef MOZ_WIDGET_GONK

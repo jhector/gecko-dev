@@ -88,7 +88,8 @@ HandleCmdWifi(struct SvMessage* aMsg)
 #endif
 
   /* |cmd| contains a valid string */
-  if (strcmp(cmd, "wifi_load_driver")) {
+  if (strcmp(cmd, "wifi_load_driver") &&
+      strcmp(cmd, "wifi_unload_driver")) {
     err = SV_ERROR_DENIED;
     goto respond;
   }

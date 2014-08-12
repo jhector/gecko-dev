@@ -37,6 +37,40 @@ SupervisorChild::~SupervisorChild()
 }
 
 bool
+SupervisorChild::SendCmdReboot(int32_t aCmd)
+{
+  bool res = false;
+  struct SvMessage* msg = NULL;
+  int32_t size = sizeof(struct SvMessage) + sizeof(aCmd);
+
+  msg = (struct SvMessage*)calloc(1, size);
+  if (!msg) {
+    return false;
+  }
+
+  msg->header.type = SV_TYPE_CMD;
+  msg->header.opt = SV_CMD_REBOOT;
+
+  *((int32_t*)msg->data) = aCmd;
+  msg->header.size = sizeof(aCmd);
+
+#ifdef DEBUG
+  printf("Send reboot command..\n");
+#endif
+  if (SendRaw(msg)) {
+    res = true;
+  } else {
+    res = false;
+  }
+
+#ifdef DEBUG
+  printf("SendRaw() response: %d\n", res);
+#endif
+  free(msg);
+  return res;
+}
+
+bool
 SupervisorChild::SendCmdWifi(const char* aCmd)
 {
   bool res = false;

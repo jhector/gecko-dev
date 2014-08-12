@@ -23,6 +23,7 @@ public:
   bool Connect(const char *aSockPath);
   void Disconnect();
 
+  bool SendCmdReboot(int32_t aCmd);
   bool SendCmdWifi(const char* aCmd);
 
   bool SendRaw(struct SvMessage* aMsg);

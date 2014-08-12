@@ -451,7 +451,11 @@ bool WpaSupplicant::ExecuteCommand(CommandOptions aOptions,
     aResult.mStatus = mImpl->do_wifi_load_driver();
 #endif
   } else if (aOptions.mCmd.EqualsLiteral("unload_driver")) {
+#ifdef MOZ_B2G_SUPERVISOR
+    aResult.mStatus = SupervisorChild::Instance()->SendCmdWifi("wifi_unload_driver");
+#else
     aResult.mStatus = mImpl->do_wifi_unload_driver();
+#endif
   } else if (aOptions.mCmd.EqualsLiteral("start_supplicant")) {
     aResult.mStatus = mImpl->do_wifi_start_supplicant(GetWifiP2pSupported() ? 1 : 0);
   } else if (aOptions.mCmd.EqualsLiteral("stop_supplicant")) {

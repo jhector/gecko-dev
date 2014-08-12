@@ -69,6 +69,12 @@
 #include "nsIWritablePropertyBag2.h"
 #include <algorithm>
 
+#ifdef MOZ_B2G_SUPERVISOR
+#include "mozilla/ipc/SupervisorChild.h"
+
+using mozilla::ipc::SupervisorChild;
+#endif
+
 #define NsecPerMsec  1000000LL
 #define NsecPerSec   1000000000
 
@@ -1401,7 +1407,11 @@ SetNiceForPid(int aPid, int aNice)
     return;
   }
 
+#ifdef MOZ_B2G_SUPERVISOR
+  int rv = !SupervisorChild::Instance()->SendCmdSetprio(aPid, aNice);
+#else
   int rv = setpriority(PRIO_PROCESS, aPid, aNice);
+#endif
   if (rv) {
     HAL_LOG(("Unable to set nice for pid=%d; error %d.  SetNiceForPid bailing.",
              aPid, errno));
@@ -1468,8 +1478,11 @@ SetNiceForPid(int aPid, int aNice)
       continue;
     }
 
+#if MOZ_B2G_SUPERVISOR
+    rv = !SupervisorChild::Instance()->SendCmdSetprio(tid, newtaskpriority);
+#else
     rv = setpriority(PRIO_PROCESS, tid, newtaskpriority);
-
+#endif
     if (rv) {
       HAL_LOG(("Unable to set nice for tid=%d (pid=%d); error %d.  This isn't "
                "necessarily a problem; it could be a benign race condition.",
@@ -1575,7 +1588,11 @@ SetThreadNiceValue(pid_t aTid, ThreadPriority aThreadPriority, int aValue)
 
   HAL_LOG(("Setting thread %d to priority level %s; nice level %d",
            aTid, ThreadPriorityToString(aThreadPriority), aValue));
+#ifdef MOZ_B2G_SUPERVISOR
+  int rv = !SupervisorChild::Instance()->SendCmdSetprio(aTid, aValue);
+#else
   int rv = setpriority(PRIO_PROCESS, aTid, aValue);
+#endif
 
   if (rv) {
     HAL_LOG(("Failed to set thread %d to priority level %s; error %s", aTid,

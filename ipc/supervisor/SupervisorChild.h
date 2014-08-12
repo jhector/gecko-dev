@@ -25,6 +25,7 @@ public:
 
   bool SendCmdReboot(int32_t aCmd);
   bool SendCmdWifi(const char* aCmd);
+  bool SendCmdSetprio(int32_t pid, int32_t nice);
 
   bool SendRaw(struct SvMessage* aMsg);
 

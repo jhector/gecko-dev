@@ -110,6 +110,41 @@ SupervisorChild::SendCmdWifi(const char* aCmd)
 }
 
 bool
+SupervisorChild::SendCmdSetprio(int32_t pid, int32_t nice)
+{
+  bool res = false;
+  struct SvMessage* msg = NULL;
+
+  int32_t size = sizeof(struct SvMessage);
+  size += sizeof(pid);
+  size += sizeof(nice);
+
+  msg = (struct SvMessage*)calloc(1, size);
+  if (!msg) {
+    return false;
+  }
+
+  msg->header.type = SV_TYPE_CMD;
+  msg->header.opt = SV_CMD_SETPRIO;
+
+  int32_t* iter = (int32_t*)msg->data;
+  *iter++ = pid;
+  *iter++ = nice;
+
+  msg->header.size = sizeof(pid) + sizeof(nice);
+
+  // TODO: send and wait for response
+  if (SendRaw(msg)) {
+    res = true;
+  } else {
+    res = false;
+  }
+
+  free(msg);
+  return res;
+}
+
+bool
 SupervisorChild::SendRaw(struct SvMessage* aMsg)
 {
   aMsg->header.magic = SV_MESSAGE_MAGIC;

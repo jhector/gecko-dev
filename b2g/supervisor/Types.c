@@ -3,6 +3,7 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+#include <sys/reboot.h>
 #include <dlfcn.h>
 
 /* from b2g/supervisor/include */
@@ -14,10 +15,50 @@
 #endif
 
 void
+HandleCmdReboot(struct SvMessage* aMsg)
+{
+#ifdef DEBUG
+  printf("Got reboot command\n");
+#endif
+  int32_t cmd = 0;
+  uint32_t len = 0;
+  void* iter = (void*)aMsg->data;
+
+  enum SvTypeError err = SV_ERROR_OK;
+
+  if (ReadInt(iter, (uint32_t*)&cmd, &len) < 0) {
+    err = SV_ERROR_FAILED;
+    goto respond;
+  }
+
+  if (len != sizeof(uint32_t)) {
+    err = SV_ERROR_INVALID;
+    goto respond;
+  }
+
+#ifdef DEBUG
+  printf("Command: %d\n", cmd);
+#endif
+
+  if (cmd != RB_AUTOBOOT &&
+      cmd != RB_POWER_OFF) {
+    err = SV_ERROR_DENIED;
+    goto respond;
+  }
+
+  // TODO: maybe some cleanup function?
+  reboot(cmd);
+
+respond:
+  // TODO: respond
+  return;
+}
+
+void
 HandleCmdWifi(struct SvMessage* aMsg)
 {
 #ifdef DEBUG
-  printf("Got wifi command: %s\n", aMsg->data);
+  printf("Got wifi command\n");
 #endif
   static void* wifilib = NULL;
 
@@ -40,6 +81,10 @@ HandleCmdWifi(struct SvMessage* aMsg)
     err = SV_ERROR_INVALID;
     goto respond;
   }
+
+#ifdef DEBUG
+  printf("Command: %s\n", cmd);
+#endif
 
   /* |cmd| contains a valid string */
   if (strcmp(cmd, "wifi_load_driver")) {
@@ -81,6 +126,7 @@ HandleActionCmd(struct SvMessage* aMsg)
   printf("Got command: %d\n", aMsg->header.opt);
 #endif
   switch(aMsg->header.opt) {
+    case SV_CMD_REBOOT: HandleCmdReboot(aMsg); break;
     case SV_CMD_WIFI: HandleCmdWifi(aMsg); break;
   }
 }

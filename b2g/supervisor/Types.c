@@ -3,6 +3,7 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+#include <sys/resource.h>
 #include <sys/reboot.h>
 #include <dlfcn.h>
 
@@ -120,6 +121,38 @@ respond:
 }
 
 void
+HandleCmdSetprio(struct SvMessage* aMsg)
+{
+  uint32_t size = 0;
+  enum SvTypeError err = SV_ERROR_OK;
+
+  int32_t pid = 0;
+  int32_t nice = 0;
+
+  void* iter = (void*)aMsg->data;
+
+  if (ReadInt(iter, &pid, &size) < 0 ||
+      ReadInt(iter, &nice, &size) < 0) {
+    err = SV_ERROR_FAILED;
+    goto respond;
+  }
+
+  if (pid == 0 || pid == getpid()) {
+    err = SV_ERROR_DENIED;
+    goto respond;
+  }
+
+  if (setpriority(PRIO_PROCESS, pid, nice)) {
+    err = SV_ERROR_FAILED;
+    goto respond;
+  }
+
+respond:
+  // TODO: send response
+  return;
+}
+
+void
 HandleActionCmd(struct SvMessage* aMsg)
 {
 #ifdef DEBUG
@@ -128,5 +161,6 @@ HandleActionCmd(struct SvMessage* aMsg)
   switch(aMsg->header.opt) {
     case SV_CMD_REBOOT: HandleCmdReboot(aMsg); break;
     case SV_CMD_WIFI: HandleCmdWifi(aMsg); break;
+    case SV_CMD_SETPRIO: HandleCmdSetprio(aMsg); break;
   }
 }

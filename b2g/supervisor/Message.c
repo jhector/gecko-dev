@@ -39,6 +39,24 @@ ValidateMsgHeader(struct SvMessageHeader* aHdr, uint32_t aSize)
 
 /**
  *
+ */
+int32_t
+ReadInt(void* aIter, uint32_t* aOut, uint32_t* aLen)
+{
+  if (!aIter || !aOut || !aLen) {
+    return -1;
+  }
+
+  *aOut = *((uint32_t*)aIter);
+  *aLen = sizeof(uint32_t);
+
+  aIter += sizeof(uint32_t);
+
+  return 0;
+}
+
+/**
+ *
  *
  */
 int32_t

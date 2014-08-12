@@ -30,6 +30,7 @@ enum SvTypeError {
 };
 
 enum SvTypeCmd {
+  SV_CMD_REBOOT,
   SV_CMD_WIFI
 };
 
@@ -53,6 +54,7 @@ extern "C" {
 #endif
 int32_t ValidateMsgHeader(struct SvMessageHeader* aHdr, uint32_t aSize);
 
+int32_t ReadInt(void* aIter, uint32_t* aOut, uint32_t* aLen);
 int32_t ReadString(void* aIter, char** aOut, uint32_t* aLen);
 #ifdef __cplusplus
 }

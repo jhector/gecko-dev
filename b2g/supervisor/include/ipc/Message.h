@@ -31,7 +31,8 @@ enum SvTypeError {
 
 enum SvTypeCmd {
   SV_CMD_REBOOT,
-  SV_CMD_WIFI
+  SV_CMD_WIFI,
+  SV_CMD_SETPRIO
 };
 
 struct SvMessageHeader {

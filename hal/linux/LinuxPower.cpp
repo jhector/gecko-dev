@@ -11,6 +11,12 @@
 #include "mozilla/Services.h"
 #include "MainThreadUtils.h"
 
+#ifdef MOZ_B2G_SUPERVISOR
+#include "mozilla/ipc/SupervisorChild.h"
+
+using mozilla::ipc::SupervisorChild;
+#endif
+
 namespace mozilla {
 namespace hal_impl {
 
@@ -24,7 +30,11 @@ Reboot()
     }
   }
   sync();
+#ifdef MOZ_B2G_SUPERVISOR
+  SupervisorChild::Instance()->SendCmdReboot(RB_AUTOBOOT);
+#else
   reboot(RB_AUTOBOOT);
+#endif
 }
 
 void
@@ -37,7 +47,11 @@ PowerOff()
     }
   }
   sync();
+#ifdef MOZ_B2G_SUPERVISOR
+  SupervisorChild::Instance()->SendCmdReboot(RB_POWER_OFF);
+#else
   reboot(RB_POWER_OFF);
+#endif
 }
 
 // Structure to specify how watchdog pthread is going to work.

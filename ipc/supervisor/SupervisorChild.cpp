@@ -51,8 +51,13 @@ SupervisorChild::SendCmdReboot(int32_t aCmd)
   msg->header.type = SV_TYPE_CMD;
   msg->header.opt = SV_CMD_REBOOT;
 
-  *((int32_t*)msg->data) = aCmd;
-  msg->header.size = sizeof(aCmd);
+  void* iter = (void*)msg->data;
+  if ((size = WriteInt(iter, aCmd, 4)) < 0) {
+    res = false;
+    goto exit_free;
+  }
+
+  msg->header.size = size;
 
 #ifdef DEBUG
   printf("Send reboot command..\n");
@@ -66,6 +71,7 @@ SupervisorChild::SendCmdReboot(int32_t aCmd)
 #ifdef DEBUG
   printf("SendRaw() response: %d\n", res);
 #endif
+exit_free:
   free(msg);
   return res;
 }
@@ -76,8 +82,8 @@ SupervisorChild::SendCmdWifi(const char* aCmd)
   bool res = false;
   struct SvMessage* msg = NULL;
 
-  int32_t length = strlen(aCmd);
-  int32_t size = length + sizeof(struct SvMessage) + 1;
+  int32_t length = strlen(aCmd)+1;
+  int32_t size = length + sizeof(struct SvMessage);
 
   if (length <= 0) {
     return false;
@@ -91,9 +97,13 @@ SupervisorChild::SendCmdWifi(const char* aCmd)
   msg->header.type = SV_TYPE_CMD;
   msg->header.opt = SV_CMD_WIFI;
 
-  strncpy(&msg->data[0], aCmd, length);
+  void* iter = (void*)msg->data;
+  if ((size = WriteString(iter, aCmd, length)) < 0) {
+    res = false;
+    goto exit_free;
+  }
 
-  msg->header.size = length + 1;
+  msg->header.size = size;
 
   // TODO: send and wait for response
   if (SendRaw(msg)) {
@@ -105,6 +115,7 @@ SupervisorChild::SendCmdWifi(const char* aCmd)
   printf("Send wifi command...\n");
   sleep(20);
 #endif
+exit_free:
   free(msg);
   return res;
 }
@@ -127,11 +138,23 @@ SupervisorChild::SendCmdSetprio(int32_t pid, int32_t nice)
   msg->header.type = SV_TYPE_CMD;
   msg->header.opt = SV_CMD_SETPRIO;
 
-  int32_t* iter = (int32_t*)msg->data;
-  *iter++ = pid;
-  *iter++ = nice;
+  void* iter = (void*)msg->data;
+  int32_t len = -1;
+  if ((len = WriteInt(iter, pid, 4)) < 0) {
+    res = false;
+    goto exit_free;
+  }
 
-  msg->header.size = sizeof(pid) + sizeof(nice);
+  size = len;
+
+  if ((len = WriteInt(iter, nice, 4)) < 0) {
+    res = false;
+    goto exit_free;
+  }
+
+  size += len;
+
+  msg->header.size = size;
 
   // TODO: send and wait for response
   if (SendRaw(msg)) {
@@ -140,6 +163,7 @@ SupervisorChild::SendCmdSetprio(int32_t pid, int32_t nice)
     res = false;
   }
 
+exit_free:
   free(msg);
   return res;
 }

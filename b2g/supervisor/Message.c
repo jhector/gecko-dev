@@ -74,3 +74,37 @@ ReadString(void* aIter, char** aOut, uint32_t* aLen)
 
   return 0;
 }
+
+/**
+ *
+ */
+int32_t
+WriteInt(void* aIter, uint32_t aIn, uint32_t aLen)
+{
+  if (!aIter) {
+    return -1;
+  }
+
+  *((uint32_t*)aIter) = aIn;
+  aIter += sizeof(aIn);
+
+  return sizeof(aIn);
+}
+
+/**
+ *
+ */
+int32_t
+WriteString(void* aIter, const char* aIn, uint32_t aLen)
+{
+  if (!aIter || !aIn || !aLen) {
+    return -1;
+  }
+
+  strncpy((char*)aIter, aIn, aLen-1);
+  ((char*)aIter)[aLen-1] = '\0';
+
+  aIter += aLen;
+
+  return aLen;
+}

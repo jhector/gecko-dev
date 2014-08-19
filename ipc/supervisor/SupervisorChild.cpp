@@ -122,6 +122,7 @@ SupervisorChild::SendCmdWifi(const char* aCmd, union WifiArgs aArgs)
   struct SvMessage* msg = NULL;
 
   int32_t ret = -1;
+  int32_t tmp = -1;
   int32_t length = strlen(aCmd)+1;
   int32_t size = length + sizeof(struct SvMessage);
 
@@ -162,12 +163,38 @@ SupervisorChild::SendCmdWifi(const char* aCmd, union WifiArgs aArgs)
 
     size = ret;
 
-    if ((ret = WriteInt(&iter, aArgs.startStopArg, 4)) < 0) {
+    if ((ret = WriteInt(&iter, aArgs.intArg, 4)) < 0) {
       res = -1;
       goto exit_free;
     }
 
     size += ret;
+  } else if (!strcmp(aCmd, "wifi_connect_to_supplicant")) {
+    tmp = strlen(aArgs.stringArg) + 1;
+    size += tmp;
+
+    msg = (struct SvMessage*)calloc(1, size);
+    if (!msg) {
+      return -1;
+    }
+
+    iter = (void*)msg->data;
+    if ((ret = WriteString(&iter, aCmd, length)) < 0) {
+      res = -1;
+      goto exit_free;
+    }
+
+    size = ret;
+
+    if ((ret = WriteString(&iter, aArgs.stringArg, tmp)) < 0) {
+      res = -1;
+      goto exit_free;
+    }
+
+    size += ret;
+  } else {
+    res = -1;
+    goto exit_free;
   }
 
   msg->header.type = SV_TYPE_CMD;

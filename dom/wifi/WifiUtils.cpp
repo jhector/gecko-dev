@@ -449,34 +449,41 @@ bool WpaSupplicant::ExecuteCommand(CommandOptions aOptions,
     mImpl->do_wifi_close_supplicant_connection(aInterface.get());
   } else if (aOptions.mCmd.EqualsLiteral("load_driver")) {
 #ifdef MOZ_B2G_SUPERVISOR
-    args.startStopArg = 0;
+    args.intArg = 0;
     aResult.mStatus = SupervisorChild::Instance()->SendCmdWifi("wifi_load_driver", args);
 #else
     aResult.mStatus = mImpl->do_wifi_load_driver();
 #endif
   } else if (aOptions.mCmd.EqualsLiteral("unload_driver")) {
 #ifdef MOZ_B2G_SUPERVISOR
-    args.startStopArg = 0;
+    args.intArg = 0;
     aResult.mStatus = SupervisorChild::Instance()->SendCmdWifi("wifi_unload_driver", args);
 #else
     aResult.mStatus = mImpl->do_wifi_unload_driver();
 #endif
   } else if (aOptions.mCmd.EqualsLiteral("start_supplicant")) {
 #ifdef MOZ_B2G_SUPERVISOR
-    args.startStopArg = GetWifiP2pSupported() ? 1 : 0;
+    args.intArg = GetWifiP2pSupported() ? 1 : 0;
     aResult.mStatus = SupervisorChild::Instance()->SendCmdWifi("wifi_start_supplicant", args);
 #else
     aResult.mStatus = mImpl->do_wifi_start_supplicant(GetWifiP2pSupported() ? 1 : 0);
 #endif
   } else if (aOptions.mCmd.EqualsLiteral("stop_supplicant")) {
 #ifdef MOZ_B2G_SUPERVISOR
-    args.startStopArg = 0;
+    args.intArg = 0;
     aResult.mStatus = SupervisorChild::Instance()->SendCmdWifi("wifi_stop_supplicant", args);
 #else
     aResult.mStatus = mImpl->do_wifi_stop_supplicant(0);
 #endif
   } else if (aOptions.mCmd.EqualsLiteral("connect_to_supplicant")) {
+#ifdef MOZ_B2G_SUPERVISOR
+    args.stringArg = aInterface.get();
+    aResult.mStatus = SupervisorChild::Instance()->SendCmdWifi(
+            "wifi_connect_to_supplicant",
+            args);
+#else
     aResult.mStatus = mImpl->do_wifi_connect_to_supplicant(aInterface.get());
+#endif
   } else if (aOptions.mCmd.EqualsLiteral("ifc_enable")) {
     aResult.mStatus = mNetUtils->do_ifc_enable(GET_CHAR(mIfname));
   } else if (aOptions.mCmd.EqualsLiteral("ifc_disable")) {

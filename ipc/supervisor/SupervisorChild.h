@@ -18,7 +18,8 @@
 struct SvMessage;
 
 union WifiArgs {
-  int32_t startStopArg;
+  int32_t intArg;
+  const char* stringArg;
 };
 
 namespace mozilla {

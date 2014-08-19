@@ -225,6 +225,14 @@ HandleCmdWifi(struct SvMessage* aMsg)
 
     data_left -= length;
 
+    if (data_left < 0) {
+      err = SV_ERROR_FAILED;
+      err_msg = "SV_CMD_WIFI: invalid data supplied";
+
+      SendErrorResponse(aMsg->header.id, err, err_msg);
+      return;
+    }
+
     int32_t (*func)(int32_t);
     func = (int32_t (*)(int32_t))dlsym(wifilib, cmd);
 
@@ -244,7 +252,39 @@ HandleCmdWifi(struct SvMessage* aMsg)
     func_ret = -1;
 #endif
     SendResponse(aMsg->header.id, func_ret, NULL, 0);
-  }else {
+  } else if (!strcmp(cmd, "wifi_connect_to_supplicant")) {
+      char *cmd_arg = NULL;
+      if (ReadString(&iter, &cmd_arg, &length) < 0) {
+        err = SV_ERROR_FAILED;
+        err_msg = "SV_CMD_WIFI: failed to read string argument";
+
+        SendErrorResponse(aMsg->header.id, err, err_msg);
+        return;
+      }
+
+      data_left -= length;
+      if (data_left < 0) {
+        err = SV_ERROR_FAILED;
+        err_msg = "SV_CMD_WIFI: invalid data supplied";
+
+        SendErrorResponse(aMsg->header.id, err, err_msg);
+        return;
+      }
+
+      int32_t (*func)(const char*);
+      func = (int32_t (*)(const char*))dlsym(wifilib, cmd);
+
+      if (dlerror() != NULL) {
+        err = SV_ERROR_FAILED;
+        err_msg = "SV_CMD_WIFI: failed to load function";
+
+        SendErrorResponse(aMsg->header.id, err, err_msg);
+        return;
+      }
+
+      func_ret = (*func)(cmd_arg);
+      SendResponse(aMsg->header.id, func_ret, NULL, 0);
+  } else {
     err = SV_ERROR_DENIED;
     err_msg = "SV_CMD_WIFI: command not in whitelist";
 

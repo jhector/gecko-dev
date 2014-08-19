@@ -6,11 +6,20 @@
 #ifndef SUPERVISOR_CHILD_H
 #define SUPERVISOR_CHILD_H
 
+#include <stdint.h>
+#include <pthread.h>
+
 #include "mozilla/ipc/UnixSocket.h"
 #include "mozilla/ipc/SupervisorObserver.h"
 #include "mozilla/ipc/SupervisorSocket.h"
 
+#define MAX_WAIT_TIME 500000000 // ns
+
 struct SvMessage;
+
+union WifiArgs {
+  int32_t startStopArg;
+};
 
 namespace mozilla {
 namespace ipc {
@@ -24,15 +33,17 @@ public:
   void Disconnect();
 
   bool SendCmdReboot(int32_t aCmd);
-  bool SendCmdWifi(const char* aCmd);
-  bool SendCmdSetprio(int32_t pid, int32_t nice);
+  int32_t SendCmdWifi(const char* aCmd, union WifiArgs aArgs);
+  int32_t SendCmdSetprio(int32_t pid, int32_t nice);
 
+  bool SendAndWait(struct SvMessage* aMsg);
   bool SendRaw(struct SvMessage* aMsg);
+
+  bool StoreResponse(struct SvMessage* aMsg);
 
   void ReceiveSocketData(
       mozilla::ipc::SupervisorSocket* aSocket,
       nsAutoPtr<mozilla::ipc::UnixSocketRawData>& aMessage);
-
 
   void OnSocketConnectSuccess(
       mozilla::ipc::SupervisorSocket* aSocket);
@@ -41,10 +52,20 @@ public:
   void OnSocketDisconnect(
       mozilla::ipc::SupervisorSocket* aSocket);
 
+public:
+  pthread_cond_t mRespCond;
+  pthread_mutex_t mRespMutex;
+
 private:
   static SupervisorChild* mInstance;
 
+  pthread_mutex_t mUseMutex;
+
   mozilla::ipc::SupervisorSocket* mSocket;
+
+  int32_t mRandFd;
+  uint32_t mWaitOn;
+  struct SvMessage* mResponse;
 
 private:
   SupervisorChild();

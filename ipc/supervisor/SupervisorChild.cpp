@@ -3,7 +3,10 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+#include <sys/stat.h>
+#include <fcntl.h>
 #include <stdio.h>
+#include <time.h>
 
 #include "mozilla/ipc/SupervisorChild.h"
 
@@ -26,6 +29,14 @@ SupervisorChild* SupervisorChild::Instance()
 SupervisorChild::SupervisorChild()
 {
   mSocket = new SupervisorSocket(this);
+  mResponse = NULL;
+  mWaitOn = -1;
+
+  mRespCond = PTHREAD_COND_INITIALIZER;
+  mRespMutex = PTHREAD_MUTEX_INITIALIZER;
+  mUseMutex = PTHREAD_MUTEX_INITIALIZER;
+
+  mRandFd = -1;
 }
 
 SupervisorChild::~SupervisorChild()
@@ -34,6 +45,32 @@ SupervisorChild::~SupervisorChild()
     delete mSocket;
 
   mInstance = NULL;
+
+  pthread_cond_destroy(&mRespCond);
+  pthread_mutex_destroy(&mRespMutex);
+}
+
+bool
+SupervisorChild::Connect(const char* aSockPath)
+{
+#ifdef DEBUG
+  printf("Trying to connect...\n");
+#endif
+  if (mRandFd < 0) {
+    mRandFd = open("/dev/urandom", O_RDONLY);
+
+    if (mRandFd < 0) {
+      return false;
+    }
+  }
+
+  return mSocket->Connect(aSockPath);
+}
+
+void
+SupervisorChild::Disconnect()
+{
+  mSocket->Disconnect();
 }
 
 bool
@@ -52,7 +89,7 @@ SupervisorChild::SendCmdReboot(int32_t aCmd)
   msg->header.opt = SV_CMD_REBOOT;
 
   void* iter = (void*)msg->data;
-  if ((size = WriteInt(iter, aCmd, 4)) < 0) {
+  if ((size = WriteInt(&iter, aCmd, 4)) < 0) {
     res = false;
     goto exit_free;
   }
@@ -76,54 +113,100 @@ exit_free:
   return res;
 }
 
-bool
-SupervisorChild::SendCmdWifi(const char* aCmd)
+int32_t
+SupervisorChild::SendCmdWifi(const char* aCmd, union WifiArgs aArgs)
 {
+  void* iter = NULL;
+
   bool res = false;
   struct SvMessage* msg = NULL;
 
+  int32_t ret = -1;
   int32_t length = strlen(aCmd)+1;
   int32_t size = length + sizeof(struct SvMessage);
 
   if (length <= 0) {
-    return false;
+    return -1;
   }
 
-  msg = (struct SvMessage*)calloc(1, size);
-  if (!msg) {
-    return false;
+  if (!strcmp(aCmd, "wifi_load_driver") ||
+      !strcmp(aCmd, "wifi_unload_driver")) {
+    msg = (struct SvMessage*)calloc(1, size);
+    if (!msg) {
+      return -1;
+    }
+
+    iter = (void*)msg->data;
+    if ((ret = WriteString(&iter, aCmd, length)) < 0) {
+      res = -1;
+      goto exit_free;
+    }
+
+    size = ret;
+
+  } else if (
+      !strcmp(aCmd, "wifi_start_supplicant") ||
+      !strcmp(aCmd, "wifi_stop_supplicant")) {
+    size += sizeof(int32_t);
+
+    msg = (struct SvMessage*)calloc(1, size);
+    if (!msg) {
+      return -1;
+    }
+
+    iter = (void*)msg->data;
+    if ((ret = WriteString(&iter, aCmd, length)) < 0) {
+      res = -1;
+      goto exit_free;
+    }
+
+    size = ret;
+
+    if ((ret = WriteInt(&iter, aArgs.startStopArg, 4)) < 0) {
+      res = -1;
+      goto exit_free;
+    }
+
+    size += ret;
   }
 
   msg->header.type = SV_TYPE_CMD;
   msg->header.opt = SV_CMD_WIFI;
-
-  void* iter = (void*)msg->data;
-  if ((size = WriteString(iter, aCmd, length)) < 0) {
-    res = false;
-    goto exit_free;
-  }
-
   msg->header.size = size;
 
-  // TODO: send and wait for response
-  if (SendRaw(msg)) {
-    res = true;
-  } else {
-    res = false;
-  }
-#if DEBUG
-  printf("Send wifi command...\n");
-  sleep(20);
+  if (SendAndWait(msg)) {
+    /* mResponse contains the response from supervisor */
+    pthread_mutex_lock(&mUseMutex);
+#ifdef DEBUG
+    printf("Message opt: %d\n", mResponse->header.opt);
 #endif
+    if (mResponse->header.type == SV_TYPE_ERROR &&
+        mResponse->header.opt != SV_ERROR_OK) {
+      // TODO: print error message?
+      res = -1;
+    } else {
+      res = mResponse->header.opt;
+    }
+
+    if (mResponse) {
+      free(mResponse);
+      mResponse = NULL;
+    }
+
+    pthread_mutex_unlock(&mUseMutex);
+  } else {
+    res = -1;
+  }
+
 exit_free:
   free(msg);
   return res;
 }
 
-bool
+int32_t
 SupervisorChild::SendCmdSetprio(int32_t pid, int32_t nice)
 {
-  bool res = false;
+  int32_t res = -1;
   struct SvMessage* msg = NULL;
 
   int32_t size = sizeof(struct SvMessage);
@@ -132,7 +215,7 @@ SupervisorChild::SendCmdSetprio(int32_t pid, int32_t nice)
 
   msg = (struct SvMessage*)calloc(1, size);
   if (!msg) {
-    return false;
+    return -1;
   }
 
   msg->header.type = SV_TYPE_CMD;
@@ -140,15 +223,15 @@ SupervisorChild::SendCmdSetprio(int32_t pid, int32_t nice)
 
   void* iter = (void*)msg->data;
   int32_t len = -1;
-  if ((len = WriteInt(iter, pid, 4)) < 0) {
-    res = false;
+  if ((len = WriteInt(&iter, pid, 4)) < 0) {
+    res = -1;
     goto exit_free;
   }
 
   size = len;
 
-  if ((len = WriteInt(iter, nice, 4)) < 0) {
-    res = false;
+  if ((len = WriteInt(&iter, nice, 4)) < 0) {
+    res = -1;
     goto exit_free;
   }
 
@@ -156,15 +239,87 @@ SupervisorChild::SendCmdSetprio(int32_t pid, int32_t nice)
 
   msg->header.size = size;
 
-  // TODO: send and wait for response
-  if (SendRaw(msg)) {
-    res = true;
+  if (SendAndWait(msg)) {
+    /* mResponse contains the response from supervisor */
+    pthread_mutex_lock(&mUseMutex);
+    if (mResponse->header.type == SV_TYPE_ERROR &&
+        mResponse->header.opt != SV_ERROR_OK) {
+      // TODO: print error message?
+      res = -1;
+    } else {
+      res = mResponse->header.opt;
+    }
+
+    if (mResponse) {
+      free(mResponse);
+      mResponse = NULL;
+    }
+
+    pthread_mutex_unlock(&mUseMutex);
   } else {
-    res = false;
+    res = -1;
   }
 
 exit_free:
   free(msg);
+  return res;
+}
+
+bool
+SupervisorChild::SendAndWait(struct SvMessage* aMsg)
+{
+  bool res = false;
+
+  if (read(mRandFd, (void*)&mWaitOn, sizeof(mWaitOn)) != sizeof(mWaitOn)) {
+    return false;
+  }
+#ifdef DEBUG
+  printf("Waiting on: 0x%08x\n", mWaitOn);
+#endif
+  aMsg->header.id = mWaitOn;
+
+  if (!SendRaw(aMsg)) {
+    return false;
+  }
+
+  int32_t rc = -1;
+  struct timespec ts;
+
+  pthread_mutex_lock(&mRespMutex);
+
+  if (clock_gettime(CLOCK_REALTIME, &ts) != 0) {
+    res = false;
+    goto exit_unlock;
+  }
+
+#ifdef DEBUG
+  printf("Monotonic time, sec: %u, nsec: %u\n", ts.tv_sec, ts.tv_nsec);
+#endif
+  ts.tv_nsec += MAX_WAIT_TIME;
+
+#ifdef DEBUG
+  printf("Sending requeset and waiting\n");
+#endif
+  rc = pthread_cond_timedwait(&mRespCond, &mRespMutex, &ts);
+
+  if (rc == ETIMEDOUT) {
+#ifdef DEBUG
+    printf("Timeout while waiting for response\n");
+#endif
+    res = false;
+    goto exit_unlock;
+  } else {
+#ifdef DEBUG
+    printf("Got response in time\n");
+#endif
+    res = true;
+    goto exit_unlock;
+  }
+
+exit_unlock:
+  mWaitOn = -1;
+
+  pthread_mutex_unlock(&mRespMutex);
   return res;
 }
 
@@ -183,19 +338,40 @@ SupervisorChild::SendRaw(struct SvMessage* aMsg)
 }
 
 bool
-SupervisorChild::Connect(const char* aSockPath)
+SupervisorChild::StoreResponse(struct SvMessage* aMsg)
 {
+  pthread_mutex_lock(&mUseMutex);
+  bool res = false;
+  uint32_t size = 0;
 #ifdef DEBUG
-  printf("Trying to connect...\n");
+  printf("StoreResponse(), id: 0x%08x\n", aMsg->header.id);
 #endif
 
-  return mSocket->Connect(aSockPath);
-}
+  /* check if we are waiting for that response */
+  if (mWaitOn != aMsg->header.id) {
+    res = false;
+    goto unlock_exit;
+  }
 
-void
-SupervisorChild::Disconnect()
-{
-  mSocket->Disconnect();
+  /* in case it is not free()ed */
+  if (mResponse) {
+    free(mResponse);
+    mResponse = NULL;
+  }
+
+  size = sizeof(struct SvMessage) + aMsg->header.size;
+  mResponse = (struct SvMessage*)calloc(1, size);
+  if (!mResponse) {
+    res = false;
+    goto unlock_exit;
+  }
+
+  memcpy(mResponse, aMsg, size);
+  res = true;
+
+unlock_exit:
+  pthread_mutex_unlock(&mUseMutex);
+  return res;
 }
 
 void

@@ -12,6 +12,8 @@
 #include "SupervisorSocket.h"
 #include "SupervisorObserver.h"
 
+#include "mozilla/ipc/SupervisorChild.h"
+
 /* from b2g/supervisor/include */
 #include <utils/Common.h>
 #include <ipc/Message.h>
@@ -95,6 +97,8 @@ SupervisorSocket::Disconnect()
 int32_t
 SupervisorSocket::HandleSocketRead(int32_t aFd, void* aOutBuf, size_t aSize)
 {
+  SupervisorChild* child = SupervisorChild::Instance();
+
   const int32_t* fds = NULL;
   uint32_t nfds = 0;
   uint32_t i = 0;
@@ -150,6 +154,16 @@ SupervisorSocket::HandleSocketRead(int32_t aFd, void* aOutBuf, size_t aSize)
   if (ValidateMsgHeader(&p->header, bytes_read) < 0) {
     goto error_close;
   }
+
+  pthread_mutex_lock(&child->mRespMutex);
+
+  if (child->StoreResponse(p)) {
+    pthread_cond_signal(&child->mRespCond);
+    errno = EAGAIN;
+    bytes_read = -1;
+  }
+
+  pthread_mutex_unlock(&child->mRespMutex);
 
   return bytes_read;
 

@@ -41,16 +41,16 @@ ValidateMsgHeader(struct SvMessageHeader* aHdr, uint32_t aSize)
  *
  */
 int32_t
-ReadInt(void* aIter, uint32_t* aOut, uint32_t* aLen)
+ReadInt(void** aIter, uint32_t* aOut, uint32_t* aLen)
 {
-  if (!aIter || !aOut || !aLen) {
+  if (!aIter || !*aIter || !aOut || !aLen) {
     return -1;
   }
 
-  *aOut = *((uint32_t*)aIter);
+  *aOut = *((uint32_t*)(*aIter));
   *aLen = sizeof(uint32_t);
 
-  aIter += sizeof(uint32_t);
+  *aIter += sizeof(uint32_t);
 
   return 0;
 }
@@ -60,17 +60,17 @@ ReadInt(void* aIter, uint32_t* aOut, uint32_t* aLen)
  *
  */
 int32_t
-ReadString(void* aIter, char** aOut, uint32_t* aLen)
+ReadString(void** aIter, char** aOut, uint32_t* aLen)
 {
-  if (!aOut || !aLen || !aIter) {
+  if (!aOut || !aLen || !aIter || !*aIter) {
     return -1;
   }
 
-  *aOut = (char*)aIter;
-  *aLen = strlen(aIter);
+  *aOut = (char*)(*aIter);
+  *aLen = strlen(*aIter);
 
   /* let the iterator point after the null terminator */
-  aIter += (*aLen)+1;
+  *aIter += (*aLen)+1;
 
   return 0;
 }
@@ -79,14 +79,14 @@ ReadString(void* aIter, char** aOut, uint32_t* aLen)
  *
  */
 int32_t
-WriteInt(void* aIter, uint32_t aIn, uint32_t aLen)
+WriteInt(void** aIter, uint32_t aIn, uint32_t aLen)
 {
-  if (!aIter) {
+  if (!aIter || !*aIter) {
     return -1;
   }
 
-  *((uint32_t*)aIter) = aIn;
-  aIter += sizeof(aIn);
+  *((uint32_t*)(*aIter)) = aIn;
+  *aIter += sizeof(aIn);
 
   return sizeof(aIn);
 }
@@ -95,16 +95,16 @@ WriteInt(void* aIter, uint32_t aIn, uint32_t aLen)
  *
  */
 int32_t
-WriteString(void* aIter, const char* aIn, uint32_t aLen)
+WriteString(void** aIter, const char* aIn, uint32_t aLen)
 {
-  if (!aIter || !aIn || !aLen) {
+  if (!aIter || !*aIter || !aIn || !aLen) {
     return -1;
   }
 
-  strncpy((char*)aIter, aIn, aLen-1);
-  ((char*)aIter)[aLen-1] = '\0';
+  strncpy((char*)(*aIter), aIn, aLen-1);
+  ((char*)(*aIter))[aLen-1] = '\0';
 
-  aIter += aLen;
+  *aIter += aLen;
 
   return aLen;
 }

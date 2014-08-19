@@ -114,7 +114,9 @@ exit_free:
 }
 
 int32_t
-SupervisorChild::SendCmdWifi(const char* aCmd, union WifiArgs aArgs)
+SupervisorChild::SendCmdWifi(const char* aCmd,
+                             struct WifiInput* aIn,
+                             struct WifiOutput* aOut)
 {
   void* iter = NULL;
 
@@ -163,14 +165,14 @@ SupervisorChild::SendCmdWifi(const char* aCmd, union WifiArgs aArgs)
 
     size = ret;
 
-    if ((ret = WriteInt(&iter, aArgs.intArg, 4)) < 0) {
+    if ((ret = WriteInt(&iter, aIn->enable, 4)) < 0) {
       res = -1;
       goto exit_free;
     }
 
     size += ret;
   } else if (!strcmp(aCmd, "wifi_connect_to_supplicant")) {
-    tmp = strlen(aArgs.stringArg) + 1;
+    tmp = strlen(aIn->interface) + 1;
     size += tmp;
 
     msg = (struct SvMessage*)calloc(1, size);
@@ -186,7 +188,7 @@ SupervisorChild::SendCmdWifi(const char* aCmd, union WifiArgs aArgs)
 
     size = ret;
 
-    if ((ret = WriteString(&iter, aArgs.stringArg, tmp)) < 0) {
+    if ((ret = WriteString(&iter, aIn->interface, tmp)) < 0) {
       res = -1;
       goto exit_free;
     }

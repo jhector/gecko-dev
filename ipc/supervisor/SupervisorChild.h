@@ -17,9 +17,14 @@
 
 struct SvMessage;
 
-union WifiArgs {
-  int32_t intArg;
-  const char* stringArg;
+struct WifiInput {
+  int32_t enable;
+  const char* interface;
+  const char* request;
+};
+
+struct WifiOutput {
+
 };
 
 namespace mozilla {
@@ -34,7 +39,9 @@ public:
   void Disconnect();
 
   bool SendCmdReboot(int32_t aCmd);
-  int32_t SendCmdWifi(const char* aCmd, union WifiArgs aArgs);
+  int32_t SendCmdWifi(const char* aCmd,
+                      struct WifiInput* aIn,
+                      struct WifiOutput* aOut);
   int32_t SendCmdSetprio(int32_t pid, int32_t nice);
 
   bool SendAndWait(struct SvMessage* aMsg);

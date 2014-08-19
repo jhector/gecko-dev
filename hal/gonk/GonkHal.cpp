@@ -1408,7 +1408,12 @@ SetNiceForPid(int aPid, int aNice)
   }
 
 #ifdef MOZ_B2G_SUPERVISOR
-  int rv = !SupervisorChild::Instance()->SendCmdSetprio(aPid, aNice);
+  int rv = -1;
+  if (aPid != 0) {
+    rv = SupervisorChild::Instance()->SendCmdSetprio(aPid, aNice);
+  } else {
+    rv = setpriority(PRIO_PROCESS, aPid, aNice);
+  }
 #else
   int rv = setpriority(PRIO_PROCESS, aPid, aNice);
 #endif
@@ -1479,7 +1484,11 @@ SetNiceForPid(int aPid, int aNice)
     }
 
 #if MOZ_B2G_SUPERVISOR
-    rv = !SupervisorChild::Instance()->SendCmdSetprio(tid, newtaskpriority);
+    if (tid != 0) {
+      rv = SupervisorChild::Instance()->SendCmdSetprio(tid, newtaskpriority);
+    } else {
+      rv = setpriority(PRIO_PROCESS, tid, newtaskpriority);
+    }
 #else
     rv = setpriority(PRIO_PROCESS, tid, newtaskpriority);
 #endif
@@ -1589,7 +1598,12 @@ SetThreadNiceValue(pid_t aTid, ThreadPriority aThreadPriority, int aValue)
   HAL_LOG(("Setting thread %d to priority level %s; nice level %d",
            aTid, ThreadPriorityToString(aThreadPriority), aValue));
 #ifdef MOZ_B2G_SUPERVISOR
-  int rv = !SupervisorChild::Instance()->SendCmdSetprio(aTid, aValue);
+  int rv = -1;
+  if (aTid != 0) {
+    rv = SupervisorChild::Instance()->SendCmdSetprio(aTid, aValue);
+  } else {
+    rv = setpriority(PRIO_PROCESS, aTid, aValue);
+  }
 #else
   int rv = setpriority(PRIO_PROCESS, aTid, aValue);
 #endif

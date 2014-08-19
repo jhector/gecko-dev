@@ -282,6 +282,8 @@ HandleCmdSetprio(struct SvMessage* aMsg)
   ret = setpriority(PRIO_PROCESS, pid, nice);
   SendResponse(aMsg->header.id, ret, NULL, 0);
 
+  return;
+
 respond:
   SendErrorResponse(aMsg->header.id, err, err_msg);
   return;

@@ -79,6 +79,23 @@ ReadString(void** aIter, char** aOut, uint32_t* aLen)
  *
  */
 int32_t
+ReadRaw(void** aIter, void** aOut, uint32_t* aLen)
+{
+  if (!aOut || !aLen || !aIter || !*aIter || !*aLen) {
+    return -1;
+  }
+
+  *aOut = (void*)(*aIter);
+
+  *aIter += (*aLen);
+
+  return 0;
+}
+
+/**
+ *
+ */
+int32_t
 WriteInt(void** aIter, uint32_t aIn, uint32_t aLen)
 {
   if (!aIter || !*aIter) {
@@ -104,6 +121,22 @@ WriteString(void** aIter, const char* aIn, uint32_t aLen)
   strncpy((char*)(*aIter), aIn, aLen-1);
   ((char*)(*aIter))[aLen-1] = '\0';
 
+  *aIter += aLen;
+
+  return aLen;
+}
+
+/**
+ *
+ */
+int32_t
+WriteRaw(void** aIter, const void* aIn, uint32_t aLen)
+{
+  if (!aIter || !*aIter || !aIn || !aLen) {
+    return -1;
+  }
+
+  memcpy((char*)(*aIter), aIn, aLen);
   *aIter += aLen;
 
   return aLen;

@@ -94,8 +94,8 @@ SupervisorSocket::Disconnect()
   CloseSocket();
 }
 
-int32_t
-SupervisorSocket::HandleSocketRead(int32_t aFd, void* aOutBuf, size_t aSize)
+ssize_t
+SupervisorSocket::HandleSocketRead(ssize_t aFd, void* aOutBuf, size_t aSize)
 {
   SupervisorChild* child = SupervisorChild::Instance();
 
@@ -174,8 +174,8 @@ error_close:
   return bytes_read; // TODO: maybe different
 }
 
-int32_t
-SupervisorSocket::HandleSocketWrite(int32_t aFd, void* aInBuf, size_t aSize)
+ssize_t
+SupervisorSocket::HandleSocketWrite(ssize_t aFd, void* aInBuf, size_t aSize)
 {
   struct msghdr msgh = {0};
 

@@ -46,8 +46,9 @@ public:
   virtual void OnDisconnect();
   virtual void ReceiveSocketData(nsAutoPtr<UnixSocketRawData>& aMessage);
 
-  static int32_t HandleSocketRead(int32_t aFd, void* aOutBuf, size_t aSize);
-  static int32_t HandleSocketWrite(int32_t aFd, void* aInBuf, size_t aSize);
+  /* won't build for keon when using "int32_t" instead of "ssize_t" */
+  static ssize_t HandleSocketRead(ssize_t aFd, void* aOutBuf, size_t aSize);
+  static ssize_t HandleSocketWrite(ssize_t aFd, void* aInBuf, size_t aSize);
 
 
 

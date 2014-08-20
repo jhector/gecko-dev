@@ -13,7 +13,7 @@
 #include "mozilla/ipc/SupervisorObserver.h"
 #include "mozilla/ipc/SupervisorSocket.h"
 
-#define MAX_WAIT_TIME 500000000 // ns
+#define MAX_WAIT_TIME 400000000 // ns
 
 struct SvMessage;
 

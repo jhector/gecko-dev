@@ -17,6 +17,8 @@
 #include <stdio.h>
 #endif
 
+#define BUFFER_SIZE 2048
+
 int32_t
 SendErrorResponse(uint32_t aId, enum SvTypeError aErr, const char* aStr)
 {
@@ -85,6 +87,9 @@ SendResponse(uint32_t aId, uint32_t aOpt, void* aData, uint32_t aSize)
     memcpy(msg->data, aData, aSize);
     msg->header.size = aSize;
   }
+#ifdef DEBUG
+  printf("Sending message, id: 0x%08x, size: %d\n", msg->header.id, msg->header.size);
+#endif
 
   ret = ChannelWrite(msg);
 
@@ -146,10 +151,14 @@ HandleCmdWifi(struct SvMessage* aMsg)
 #endif
   static void* wifilib = NULL;
 
+  int32_t buffer_len = BUFFER_SIZE - 1;
+  char buffer[BUFFER_SIZE] = {0};
+
   int32_t data_left = aMsg->header.size;
   uint32_t length = 0;
   char* cmd = NULL;
   char* err_msg = NULL;
+  char* resp_data = NULL;
 
   enum SvTypeError err = SV_ERROR_OK;
 
@@ -214,8 +223,8 @@ HandleCmdWifi(struct SvMessage* aMsg)
   } else if (
       !strcmp(cmd, "wifi_start_supplicant") ||
       !strcmp(cmd, "wifi_stop_supplicant")) {
-    int32_t cmd_arg = -1;
-    if (ReadInt(&iter, &cmd_arg, &length) < 0) {
+    int32_t enable = -1;
+    if (ReadInt(&iter, &enable, &length) < 0) {
       err = SV_ERROR_FAILED;
       err_msg = "SV_CMD_WIFI: failed to read int32_t argument";
 
@@ -226,7 +235,7 @@ HandleCmdWifi(struct SvMessage* aMsg)
     data_left -= length;
 
     if (data_left < 0) {
-      err = SV_ERROR_FAILED;
+      err = SV_ERROR_INVALID;
       err_msg = "SV_CMD_WIFI: invalid data supplied";
 
       SendErrorResponse(aMsg->header.id, err, err_msg);
@@ -247,14 +256,14 @@ HandleCmdWifi(struct SvMessage* aMsg)
        wifi_start_supplicant succeeded, probably tries to execute command
        which needs to be remoted */
 
-    func_ret = (*func)(cmd_arg);
+    func_ret = (*func)(enable);
 #ifndef DEBUG
     func_ret = -1;
 #endif
     SendResponse(aMsg->header.id, func_ret, NULL, 0);
   } else if (!strcmp(cmd, "wifi_connect_to_supplicant")) {
-      char *cmd_arg = NULL;
-      if (ReadString(&iter, &cmd_arg, &length) < 0) {
+      char* interface = NULL;
+      if (ReadString(&iter, &interface, &length) < 0) {
         err = SV_ERROR_FAILED;
         err_msg = "SV_CMD_WIFI: failed to read string argument";
 
@@ -264,12 +273,17 @@ HandleCmdWifi(struct SvMessage* aMsg)
 
       data_left -= length;
       if (data_left < 0) {
-        err = SV_ERROR_FAILED;
+        err = SV_ERROR_INVALID;
         err_msg = "SV_CMD_WIFI: invalid data supplied";
 
         SendErrorResponse(aMsg->header.id, err, err_msg);
         return;
       }
+
+#ifdef DEBUG
+      printf("Interface name: %s\n", interface);
+#endif
+      // TODO: whitelist on interface name?
 
       int32_t (*func)(const char*);
       func = (int32_t (*)(const char*))dlsym(wifilib, cmd);
@@ -282,8 +296,93 @@ HandleCmdWifi(struct SvMessage* aMsg)
         return;
       }
 
-      func_ret = (*func)(cmd_arg);
+      func_ret = (*func)(interface);
       SendResponse(aMsg->header.id, func_ret, NULL, 0);
+  } else if (!strcmp(cmd, "wifi_command")) {
+    char* interface = NULL;
+    char* request = NULL;
+
+    if (ReadString(&iter, &interface, &length) < 0) {
+      err = SV_ERROR_FAILED;
+      err_msg = "SV_CMD_WIFI: failed to read interface name";
+
+      SendErrorResponse(aMsg->header.id, err, err_msg);
+      return;
+    }
+#ifdef DEBUG
+    printf("Interface: %s\nLength: %d\n", interface, length);
+#endif
+
+    data_left -= length;
+    if (data_left < 0 || length <= 1) {
+      err = SV_ERROR_INVALID;
+      err_msg = "SV_CMD_WIFI: invalid string";
+
+      SendErrorResponse(aMsg->header.id, err, err_msg);
+      return;
+    }
+
+    if (ReadString(&iter, &request, &length) < 0) {
+      err = SV_ERROR_FAILED;
+      err_msg = "SV_CMD_WIFI: failed to read request string";
+
+      SendErrorResponse(aMsg->header.id, err, err_msg);
+      return;
+    }
+#ifdef DEBUG
+    printf("Request: %s\nlength: %d\n", request, length);
+#endif
+
+    data_left -= length;
+    if (data_left < 0 || length <= 1) {
+      err = SV_ERROR_INVALID;
+      err_msg = "SV_CMD_WIFI: invalid string";
+
+      SendErrorResponse(aMsg->header.id, err, err_msg);
+      return;
+    }
+
+    // TODO: whitelist interface/request?
+
+    int32_t (*func)(const char*, const char*, char*, int32_t*);
+    func = (int32_t (*)(const char*, const char*, char*, int32_t*))
+      dlsym(wifilib, cmd);
+
+    if (dlerror() != NULL) {
+      err = SV_ERROR_FAILED;
+      err_msg = "SV_CMD_WIFI: failed to load function";
+
+      SendErrorResponse(aMsg->header.id, err, err_msg);
+      return;
+    }
+
+    func_ret = (*func)(interface, request, buffer, &buffer_len);
+
+    length = sizeof(buffer_len) + buffer_len + 1;
+    resp_data = (char*)calloc(1, length);
+
+    if (!resp_data) {
+      err = SV_ERROR_MEMORY;
+      err_msg = "SV_CMD_WIFI: failed to allocate memory";
+
+      SendErrorResponse(aMsg->header.id, err, err_msg);
+      return;
+    }
+
+    /* prepare data to send back */
+    iter = (void*)resp_data;
+    if (WriteInt(&iter, buffer_len, sizeof(buffer_len)) < 0 ||
+        WriteRaw(&iter, buffer, buffer_len) < 0) {
+      err = SV_ERROR_FAILED;
+      err_msg = "SV_CMD_WIFI: failed to write response data";
+
+      SendErrorResponse(aMsg->header.id, err, err_msg);
+      return;
+    }
+
+    SendResponse(aMsg->header.id, func_ret, resp_data, length);
+
+    free(resp_data);
   } else {
     err = SV_ERROR_DENIED;
     err_msg = "SV_CMD_WIFI: command not in whitelist";

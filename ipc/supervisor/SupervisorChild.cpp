@@ -158,7 +158,7 @@ SupervisorChild::SendCmdWifi(const char* aCmd,
 {
   void* iter = NULL;
 
-  bool res = false;
+  int32_t res = -1;
   struct SvMessage* msg = NULL;
 
   int32_t ret = -1;
@@ -285,7 +285,7 @@ SupervisorChild::SendCmdWifi(const char* aCmd,
       // TODO: print error message?
       res = -1;
     } else {
-      res = mResponse->header.opt;
+      res = (int32_t)mResponse->header.opt;
     }
 
     HandleWifiResponse(aCmd, mResponse, aOut);

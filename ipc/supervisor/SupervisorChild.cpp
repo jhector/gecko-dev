@@ -113,6 +113,44 @@ exit_free:
   return res;
 }
 
+void
+SupervisorChild::HandleWifiResponse(const char* aCmd,
+                                    struct SvMessage* aResp,
+                                    struct WifiOutput* aOut)
+{
+  if (!aResp || !aCmd || !aOut) {
+    return;
+  }
+
+  if (!strcmp(aCmd, "wifi_command")) {
+    if (!aOut->buffer || !aOut->length || !(*(aOut->length))) {
+      return;
+    }
+
+    uint32_t size = 0;
+    int32_t len = -1;
+    void* data = NULL;
+
+    void *iter = (void*)aResp->data;
+    if (ReadInt(&iter, (uint32_t*)&len, &size) < 0 ||
+        ReadRaw(&iter, &data, (uint32_t*)&len) < 0) {
+      return;
+    }
+
+    if (len < 0 || len > *(aOut->length)) {
+      return;
+    }
+
+    memcpy(aOut->buffer, data, len);
+    *(aOut->length) = len;
+#ifdef DEBUG
+    uint32_t* ptr = (uint32_t*)aOut->buffer;
+    printf("WIFI response, length: %d\nString: %s\nHex:\n%08x %08x %08x %08x\n",
+        len, aOut->buffer, *ptr++, *ptr++, *ptr++, *ptr++);
+#endif
+  }
+}
+
 int32_t
 SupervisorChild::SendCmdWifi(const char* aCmd,
                              struct WifiInput* aIn,
@@ -194,6 +232,39 @@ SupervisorChild::SendCmdWifi(const char* aCmd,
     }
 
     size += ret;
+  } else if (!strcmp(aCmd, "wifi_command")) {
+    size += strlen(aIn->interface) + 1;
+    size += strlen(aIn->request) + 1;
+
+    msg = (struct SvMessage*)calloc(1, size);
+    if (!msg) {
+      return -1;
+    }
+
+#ifdef DEBUG
+    printf("interface: %s\nrequest: %s\n", aIn->interface, aIn->request);
+#endif
+    iter = (void*)msg->data;
+    if ((ret = WriteString(&iter, aCmd, length)) < 0) {
+      res = -1;
+      goto exit_free;
+    }
+
+    size = ret;
+    tmp = strlen(aIn->interface) + 1;
+    if ((ret = WriteString(&iter, aIn->interface, tmp)) < 0) {
+      res = -1;
+      goto exit_free;
+    }
+
+    size += ret;
+    tmp = strlen(aIn->request) + 1;
+    if ((ret = WriteString(&iter, aIn->request, tmp)) < 0) {
+      res = -1;
+      goto exit_free;
+    }
+
+    size += ret;
   } else {
     res = -1;
     goto exit_free;
@@ -207,7 +278,7 @@ SupervisorChild::SendCmdWifi(const char* aCmd,
     /* mResponse contains the response from supervisor */
     pthread_mutex_lock(&mUseMutex);
 #ifdef DEBUG
-    printf("Message opt: %d\n", mResponse->header.opt);
+    printf("Message opt: %d, size: %d\n", mResponse->header.opt, mResponse->header.size);
 #endif
     if (mResponse->header.type == SV_TYPE_ERROR &&
         mResponse->header.opt != SV_ERROR_OK) {
@@ -216,6 +287,8 @@ SupervisorChild::SendCmdWifi(const char* aCmd,
     } else {
       res = mResponse->header.opt;
     }
+
+    HandleWifiResponse(aCmd, mResponse, aOut);
 
     if (mResponse) {
       free(mResponse);

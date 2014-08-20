@@ -436,7 +436,18 @@ bool WpaSupplicant::ExecuteCommand(CommandOptions aOptions,
     size_t len = BUFFER_SIZE - 1;
     char buffer[BUFFER_SIZE];
     NS_ConvertUTF16toUTF8 request(aOptions.mRequest);
+#ifdef MOZ_B2G_SUPERVISOR
+    in_args.interface = aInterface.get();
+    in_args.request = request.get();
+
+    out_args.buffer = buffer;
+    out_args.length = (int32_t*)&len;
+    aResult.mStatus = SupervisorChild::Instance()->SendCmdWifi("wifi_command",
+                                                               &in_args,
+                                                               &out_args);
+#else
     aResult.mStatus = mImpl->do_wifi_command(aInterface.get(), request.get(), buffer, &len);
+#endif
     nsString value;
     if (aResult.mStatus == 0) {
       if (buffer[len - 1] == '\n') { // remove trailing new lines.

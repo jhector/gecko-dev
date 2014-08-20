@@ -24,7 +24,8 @@ struct WifiInput {
 };
 
 struct WifiOutput {
-
+  char* buffer;
+  int32_t* length;
 };
 
 namespace mozilla {
@@ -39,6 +40,9 @@ public:
   void Disconnect();
 
   bool SendCmdReboot(int32_t aCmd);
+  void HandleWifiResponse(const char* aCmd,
+                          struct SvMessage* aResp,
+                          struct WifiOutput* aOut);
   int32_t SendCmdWifi(const char* aCmd,
                       struct WifiInput* aIn,
                       struct WifiOutput* aOut);

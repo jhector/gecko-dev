@@ -33,7 +33,7 @@ enum ioresult
 OnMessageReceived(struct SvMessage* aMsg)
 {
 #ifdef DEBUG
-  printf("Got message, type: %d, opt: %d\n", aMsg->header.type, 
+  printf("Got message, type: %d, opt: %d\n", aMsg->header.type,
       aMsg->header.opt);
 #endif
 
@@ -48,7 +48,7 @@ OnMessageReceived(struct SvMessage* aMsg)
   return IO_OK;
 }
 
-int 
+int
 main(int argc, char* argv[])
 {
   gChannelData.channelInfo->path = "/dev/socket/supervisord";

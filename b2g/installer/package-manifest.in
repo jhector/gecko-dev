@@ -838,6 +838,10 @@ bin/components/@DLL_PREFIX@nkgnomevfs@DLL_SUFFIX@
 @BINPATH@/@DLL_PREFIX@plugin_child_interpose@DLL_SUFFIX@
 #endif
 
+#ifdef MOZ_B2G_SUPERVISOR
+@BINPATH@/supervisor
+#endif
+
 #ifdef PACKAGE_GAIA
 [gaia]
 @BINPATH@/gaia/*

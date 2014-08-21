@@ -20,9 +20,9 @@
     })
 
 int32_t SetFdFlag(int32_t aFd, uint32_t aFlag);
-int32_t DropFilePriv(const char* aPath, 
-                     uid_t aOwner, 
-                     uid_t aGroup, 
+int32_t DropFilePriv(const char* aPath,
+                     uid_t aOwner,
+                     uid_t aGroup,
                      mode_t aMode);
 
 #endif // SUPERVISOR_UTILS_COMMON_H

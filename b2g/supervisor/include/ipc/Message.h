@@ -36,7 +36,7 @@ enum SvTypeCmd {
 };
 
 struct SvMessageHeader {
-  uint32_t magic; 
+  uint32_t magic;
   uint32_t id;
   uint32_t nfds;
   uint32_t size;

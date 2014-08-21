@@ -9,10 +9,17 @@
 #include <ipc/Message.h>
 
 /**
+ * Validates the received message by checking the magic.
+ * It also checks if we received at least a message header
+ * along with the file descriptor array (empty or not).
+ *
+ * |size| field in header is checked whether it reasonable or not,
+ * by checking if it exceeds the total amount of bytes received.
  *
  * @param aHdr message header from child
  * @param aSize number of bytes from socket
  *
+ * @return 0 when header is valid
  */
 int32_t
 ValidateMsgHeader(struct SvMessageHeader* aHdr, uint32_t aSize)
@@ -38,7 +45,19 @@ ValidateMsgHeader(struct SvMessageHeader* aHdr, uint32_t aSize)
 }
 
 /**
+ * Reads an 32 bit integer at the current |aIter| position.
+ * The integer is stored in |aOut|. |aLen| contains the size
+ * of the read integer. After the read, |aIter| will be
+ * repositioned.
  *
+ * Note: |aIter| is expected to be point to a mapped memory
+ * region.
+ *
+ * @param aIter pointer to a data block pointer
+ * @param aOut pointer to store read integer
+ * @param aLen pointer to store read length
+ *
+ * @return 0 on successful read
  */
 int32_t
 ReadInt(void** aIter, uint32_t* aOut, uint32_t* aLen)
@@ -56,8 +75,18 @@ ReadInt(void** aIter, uint32_t* aOut, uint32_t* aLen)
 }
 
 /**
+ * Returns a pointer to the beginning of the string. Length
+ * of string will be written to |aLen| and |aIter| will be
+ * repositioned to pointer after the null termination of the
+ * string.
  *
+ * Note: caller needs to check if the string length is valid.
  *
+ * @param aIter pointer to a data block pointer
+ * @param aOut pointer to store the char pointer
+ * @param aLen pointer to store the string length
+ *
+ * @return 0 on successful read
  */
 int32_t
 ReadString(void** aIter, char** aOut, uint32_t* aLen)
@@ -76,7 +105,15 @@ ReadString(void** aIter, char** aOut, uint32_t* aLen)
 }
 
 /**
+ * Returns a pointer to raw byte data. |aLen| is expected to
+ * contain the length of the raw data, so that |aIter| can
+ * be repositioned to the end of the raw data.
  *
+ * @param aIter pointer to a data block pointer
+ * @param aOut pointer to store void pointer
+ * @param aLen pointer to legnth of raw data block
+ *
+ * @return 0 on successful read
  */
 int32_t
 ReadRaw(void** aIter, void** aOut, uint32_t* aLen)
@@ -93,7 +130,16 @@ ReadRaw(void** aIter, void** aOut, uint32_t* aLen)
 }
 
 /**
+ * Writes a given 32 bit integer to |aIter| and
+ * shifts |aIter| to the end for next write.
  *
+ * Note: no check where we write to
+ *
+ * @param aIter pointer to data block to write to
+ * @param aIn integer value to write
+ * @param aLen length of the value to write (ignored here)
+ *
+ * @return amounts of bytes written
  */
 int32_t
 WriteInt(void** aIter, uint32_t aIn, uint32_t aLen)
@@ -109,7 +155,15 @@ WriteInt(void** aIter, uint32_t aIn, uint32_t aLen)
 }
 
 /**
+ * Copies a string with up to |aLen| bytes to given location.
+ * |aLen| includes the null terminator. After the copy |aIter|
+ * will point to the location after the null-terminator
  *
+ * @param aIter pointer to the data block to write to
+ * @param aIn pointer to a string that should be copied
+ * @param aLen length of the string including null termination
+ *
+ * @return aLen
  */
 int32_t
 WriteString(void** aIter, const char* aIn, uint32_t aLen)
@@ -127,7 +181,14 @@ WriteString(void** aIter, const char* aIn, uint32_t aLen)
 }
 
 /**
+ * Copies |aLen| of raw data to given location. After the copy
+ * |aIter| will point after the raw data block
  *
+ * @param aIter pointer to the data block to write to
+ * @param aIn pointer to raw data to copy
+ * @param aLen length of raw data
+ *
+ * @return aLen
  */
 int32_t
 WriteRaw(void** aIter, const void* aIn, uint32_t aLen)

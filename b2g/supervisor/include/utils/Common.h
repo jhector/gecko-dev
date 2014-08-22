@@ -10,7 +10,14 @@
 #include <stdint.h>
 #include <errno.h>
 
-/* TODO: from ipc/chromium/src/base/eintr_wrapper.h */
+/*
+ * Copied from chromium:
+ * http://mxr.mozilla.org/mozilla-central/source/ipc/
+ * chromium/src/base/eintr_wrapper.h#19
+ *
+ * copied here to avoid having to include original header
+ * file across the directories
+ */
 #define HANDLE_EINTR(x) ({ \
     typeof(x) __eintr_result__; \
     do { \

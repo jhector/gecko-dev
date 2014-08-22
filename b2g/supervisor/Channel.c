@@ -78,7 +78,13 @@ ChannelRead(struct ChannelDataCb *aCbData)
     return IO_ABORT;
   }
 
-  // TODO: license, this code is more or less from chromium
+  /*
+   * Code originally from chromium:
+   * http://mxr.mozilla.org/mozilla-central/source/ipc/chromium/src/
+   * chrome/common/ipc_channel_posix.cc?rev=4c5c545d7874#426
+   *
+   * Some modifications to support supervisor message format.
+   */
   int32_t bytes_read = 0;
   int32_t i = 0;
 
@@ -167,7 +173,13 @@ exit_close:
 int32_t
 ChannelWrite(struct SvMessage* aMsg)
 {
-  // TODO: license, taken more or less from chromium code
+  /*
+   * Code originally from chromium:
+   * http://mxr.mozilla.org/mozilla-central/source/ipc/chromium/src/
+   * chrome/common/ipc_channel_posix.cc?rev=4c5c545d7874#656
+   *
+   * Some modifications to support supervisor message format.
+   */
   struct msghdr msgh = {0};
 
   aMsg->header.magic = SV_MESSAGE_MAGIC;

@@ -17,3 +17,10 @@ if CONFIG['MOZ_B2G']:
 
     XPIDL_MODULE = 'dom_engineeringmode'
 
+    UNIFIED_SOURCES += [
+        'nsEngineeringMode.cpp',
+	'nsEngineeringModeModule.cpp',
+    ]
+
+    Library('engineeringmode')
+    FINAL_LIBRARY = 'xul'

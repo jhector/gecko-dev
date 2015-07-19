@@ -19,7 +19,7 @@ if CONFIG['MOZ_B2G']:
 
     UNIFIED_SOURCES += [
         'nsEngineeringMode.cpp',
-	'nsEngineeringModeModule.cpp',
+        'nsEngineeringModeModule.cpp',
     ]
 
     Library('engineeringmode')

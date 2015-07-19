@@ -10,6 +10,29 @@
 namespace mozilla {
 namespace dom {
 
+MessageHandlerArray::MessageHandlerArray()
+  : mRefCount(0)
+{}
+
+void
+MessageHandlerArray::Release()
+{
+  NS_PRECONDITION(int32_t(mRefCount) != 0, "dup release");
+  int32_t count = --mRefCount;
+  NS_LOG_RELEASE(this, count, "MessageHandlerArray");
+
+  if (count == 0)
+    delete this;
+}
+
+void
+MessageHandlerArray::AddRef()
+{
+  NS_PRECONDITION(int32_t(mRefCount) >= 0, "illegal refcount");
+  int32_t count = ++mRefCount;
+  NS_LOG_ADDREF(this, count, "MessageHandlerArray", sizeof(*this));
+}
+
 
 NS_IMPL_ISUPPORTS(nsEngineeringMode, nsIEngineeringMode)
 
@@ -81,6 +104,52 @@ nsEngineeringMode::SetMessageHandler(nsIEngineeringModeMessageHandler* aHandler)
    */
 
   return NS_OK;
+}
+
+void
+nsEngineeringMode::LoadPlugins()
+{
+  /* dlopen()/dlsym() everything in a specific directory */
+}
+
+void
+nsEngineeringMode::UnloadPlugins()
+{
+  /* unload all loaded plugins */
+}
+
+/* Functions exposed to the plugins */
+int
+nsEngineeringMode::RegisterNamespace(const char *aNs, PluginHandler aHandler)
+{
+  PluginHandler handler;
+  if (mNamespaces.Get(nsCString(aNs), &handler))
+    return PLUGIN_ERROR;
+
+  mNamespaces.Put(nsCString(aNs), aHandler);
+  return PLUGIN_OK;
+}
+
+int
+nsEngineeringMode::RegisterMessageListener(const char *aTopic,
+PluginRecvMessage aHandler)
+{
+  /* TODO: register for the message */
+
+  nsRefPtr<MessageHandlerArray> handlers;
+  if (mMessageHandlers.Get(nsCString(aTopic), &handlers)) {
+    if (handlers->Contains(aHandler)) {
+      return PLUGIN_OK;
+    }
+
+    handlers->AppendElement(aHandler);
+    return PLUGIN_OK;
+  }
+
+  handlers = new MessageHandlerArray;
+  handlers->AppendElement(aHandler);
+  mMessageHandlers.Put(nsCString(aTopic), handlers);
+  return PLUGIN_OK;
 }
 
 } // dom

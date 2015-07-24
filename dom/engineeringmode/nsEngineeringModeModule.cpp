@@ -56,6 +56,7 @@ static const mozilla::Module::ContractIDEntry kEngineeringModeContracts[] = {
 // entries: this is just a sample of how you'd do it.
 // @see nsICategoryManager for information on retrieving category data.
 static const mozilla::Module::CategoryEntry kEngineeringModeCategories[] = {
+    { "profile-after-change", "EngineeringMode Plugin Host", ENGINEERING_MODE_CONTRACTID },
     { nullptr }
 };
 

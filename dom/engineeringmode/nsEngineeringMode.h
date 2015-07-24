@@ -12,6 +12,9 @@
 #include "nsRefPtr.h"
 #include "nsDataHashtable.h"
 
+#include "nsIObserver.h"
+#include "nsIObserverService.h"
+
 #include "nsEngineeringPlugin.h"
 
 #define ENGINEERING_MODE_CID                            \
@@ -40,11 +43,13 @@ private:
   int32_t mRefCount;
 };
 
-class nsEngineeringMode : public nsIEngineeringMode
+class nsEngineeringMode : public nsIEngineeringMode,
+                          public nsIObserver
 {
 public:
   NS_DECL_ISUPPORTS
   NS_DECL_NSIENGINEERINGMODE
+  NS_DECL_NSIOBSERVER
 
   nsEngineeringMode();
 

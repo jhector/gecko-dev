@@ -5,6 +5,14 @@
 
 #include "nsEngineeringMode.h"
 
+#if 1
+#include <unistd.h>
+#endif
+
+#include "mozilla/Services.h"
+
+#include "nsCRT.h"
+#include "nsCOMPtr.h"
 #include "nsLiteralString.h"            // for NS_LITERAL_STRING
 
 namespace mozilla {
@@ -29,15 +37,17 @@ void
 MessageHandlerArray::AddRef()
 {
   NS_PRECONDITION(int32_t(mRefCount) >= 0, "illegal refcount");
-  int32_t count = ++mRefCount;
-  NS_LOG_ADDREF(this, count, "MessageHandlerArray", sizeof(*this));
+  NS_LOG_ADDREF(this, mRefCount++, "MessageHandlerArray", sizeof(*this));
 }
 
 
-NS_IMPL_ISUPPORTS(nsEngineeringMode, nsIEngineeringMode)
+NS_IMPL_ISUPPORTS(nsEngineeringMode, nsIEngineeringMode, nsIObserver)
 
 nsEngineeringMode::nsEngineeringMode()
 {
+#if 1
+  printf("[%d] nsEngineeringMode::nsEngineeringMode()\n", getpid());
+#endif
 }
 
 nsEngineeringMode::~nsEngineeringMode()
@@ -106,16 +116,50 @@ nsEngineeringMode::SetMessageHandler(nsIEngineeringModeMessageHandler* aHandler)
   return NS_OK;
 }
 
+NS_IMETHODIMP
+nsEngineeringMode::Observe(nsISupports *aSubject, const char *aTopic, const
+                           char16_t *aData)
+{
+#if 1
+  printf("nsEngineeringMode::Observe(): %s\n", aTopic);
+#endif
+  if (nsCRT::strcmp(aTopic, "profile-after-change") == 0) {
+    nsCOMPtr<nsIObserverService> observerService =
+      mozilla::services::GetObserverService();
+
+    observerService->AddObserver(this, "profile-before-change", false);
+
+    LoadPlugins();
+  }
+
+  if (nsCRT::strcmp(aTopic, "profile-before-change") == 0) {
+    nsCOMPtr<nsIObserverService> observerService =
+      mozilla::services::GetObserverService();
+
+    observerService->RemoveObserver(this, "profile-before-change");
+
+    UnloadPlugins();
+  }
+
+  return NS_OK;
+}
+
 void
 nsEngineeringMode::LoadPlugins()
 {
   /* dlopen()/dlsym() everything in a specific directory */
+#if 1
+  printf("[%d] nsEngineeringMode::LoadPlugins()\n", getpid());
+#endif
 }
 
 void
 nsEngineeringMode::UnloadPlugins()
 {
   /* unload all loaded plugins */
+#if 1
+  printf("nsEngineeringMode::UnloadPlugins()\n");
+#endif
 }
 
 /* Functions exposed to the plugins */
@@ -132,7 +176,7 @@ nsEngineeringMode::RegisterNamespace(const char *aNs, PluginHandler aHandler)
 
 int
 nsEngineeringMode::RegisterMessageListener(const char *aTopic,
-PluginRecvMessage aHandler)
+                                           PluginRecvMessage aHandler)
 {
   /* TODO: register for the message */
 

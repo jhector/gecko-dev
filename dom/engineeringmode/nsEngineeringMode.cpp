@@ -10,16 +10,50 @@
 #endif
 
 #include "mozilla/Services.h"
+#include "mozilla/StaticPtr.h"
+#include "mozilla/RefPtr.h"
 
 #include "nsIFile.h"
 #include "nsISimpleEnumerator.h"
-
+#include "nsXULAppAPI.h"
 #include "nsCRT.h"
 #include "nsCOMPtr.h"
 #include "nsLiteralString.h"            // for NS_LITERAL_STRING
 
 namespace mozilla {
 namespace dom {
+
+mozilla::StaticRefPtr<nsEngineeringMode> gEngineeringMode;
+
+static int
+RegisterNamespace(const char* aNs, PluginHandlerFn aFn)
+{
+  nsresult rv = NS_OK;
+  nsCOMPtr<nsIEngineeringMode> engmode =
+    do_GetService(ENGINEERING_MODE_CONTRACTID, &rv);
+
+  if (NS_FAILED(rv) || !engmode) {
+    NS_ERROR("Failed to get EngineeringMode service");
+    return PLUGIN_ERROR;
+  }
+
+#if 1
+  printf("Got EngineeringMode service\n");
+#endif
+
+  // XXX: is this cast always possible??
+  nsEngineeringMode* engmodeimpl =
+    reinterpret_cast<nsEngineeringMode*>(engmode.get());
+  engmodeimpl->RegisterNamespaceImpl(aNs, aFn);
+
+  return PLUGIN_OK;
+}
+
+static int
+RegisterMessageListener(const char* aTopic, PluginRecvMessageFn aFn)
+{
+  return PLUGIN_ERROR;
+}
 
 PluginAPI::PluginAPI()
   : mRefCount(0)
@@ -32,8 +66,9 @@ PluginAPI::Release()
   int32_t count = --mRefCount;
   NS_LOG_RELEASE(this, count, "EngineeringMode::PluginAPI");
 
-  if (count == 0)
+  if (count == 0) {
     delete this;
+  }
 }
 
 void
@@ -54,8 +89,9 @@ MessageHandlerArray::Release()
   int32_t count = --mRefCount;
   NS_LOG_RELEASE(this, count, "EngineeringMode::MessageHandlerArray");
 
-  if (count == 0)
+  if (count == 0) {
     delete this;
+  }
 }
 
 void
@@ -67,6 +103,23 @@ MessageHandlerArray::AddRef()
 
 
 NS_IMPL_ISUPPORTS(nsEngineeringMode, nsIEngineeringMode, nsIObserver)
+
+/* static */ already_AddRefed<nsEngineeringMode>
+nsEngineeringMode::FactoryCreate()
+{
+  if (!XRE_IsParentProcess()) {
+    return nullptr;
+  }
+
+  MOZ_ASSERT(NS_IsMainThread());
+
+  if (!gEngineeringMode) {
+    gEngineeringMode = new nsEngineeringMode();
+  }
+
+  nsRefPtr<nsEngineeringMode> service = gEngineeringMode.get();
+  return service.forget();
+}
 
 nsEngineeringMode::nsEngineeringMode()
 {
@@ -83,6 +136,8 @@ NS_IMETHODIMP
 nsEngineeringMode::GetValue(const nsAString& aName,
                             nsIEngineeringModeCallback* aCallback)
 {
+  printf("this ptr: %p\n", this);
+
   if (!aCallback) {
     return NS_ERROR_INVALID_ARG;
   }
@@ -219,8 +274,12 @@ nsEngineeringMode::LoadPlugins()
       continue;
     }
 
-    /* TODO: fix call */
-    if (api->init(nullptr) == PLUGIN_ERROR) {
+    HostInterface interface = {
+      .mRegisterNamespace = &RegisterNamespace,
+      .mRegisterMessageListener = &RegisterMessageListener
+    };
+
+    if (api->init(&interface) == PLUGIN_ERROR) {
       PR_UnloadLibrary(plugin);
       continue;
     }
@@ -242,13 +301,13 @@ nsEngineeringMode::UnloadPlugins()
 bool
 nsEngineeringMode::LoadPluginAPI(PRLibrary *aPlugin, struct PluginAPI *aApi)
 {
-  aApi->init = (PluginInit) PR_FindSymbol(aPlugin, "PluginInit");
+  aApi->init = (PluginInitFn) PR_FindSymbol(aPlugin, "PluginInit");
   if (!aApi->init) {
     NS_WARNING("plugin is missing 'PluginInit' export");
     return false;
   }
 
-  aApi->destroy = (PluginDestroy) PR_FindSymbol(aPlugin, "PluginDestroy");
+  aApi->destroy = (PluginDestroyFn) PR_FindSymbol(aPlugin, "PluginDestroy");
   if (!aApi->destroy) {
     NS_WARNING("plugin is missing 'PluginDestroy' export");
     return false;
@@ -259,9 +318,12 @@ nsEngineeringMode::LoadPluginAPI(PRLibrary *aPlugin, struct PluginAPI *aApi)
 
 /* Functions exposed to the plugins */
 int
-nsEngineeringMode::RegisterNamespace(const char *aNs, PluginHandler aHandler)
+nsEngineeringMode::RegisterNamespaceImpl(const char *aNs, PluginHandlerFn aHandler)
 {
-  PluginHandler handler;
+#if 1
+  printf("Inside RegisterNamespaceImpl\n");
+#endif
+  PluginHandlerFn handler;
   if (mNamespaces.Get(nsCString(aNs), &handler))
     return PLUGIN_ERROR;
 
@@ -270,8 +332,8 @@ nsEngineeringMode::RegisterNamespace(const char *aNs, PluginHandler aHandler)
 }
 
 int
-nsEngineeringMode::RegisterMessageListener(const char *aTopic,
-                                           PluginRecvMessage aHandler)
+nsEngineeringMode::RegisterMessageListenerImpl(const char *aTopic,
+                                           PluginRecvMessageFn aHandler)
 {
   /* TODO: register for the message */
 

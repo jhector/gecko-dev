@@ -27,7 +27,8 @@ using mozilla::dom::nsEngineeringMode;
 // NOTE: This creates an instance of nsSampleImpl by using the default
 //		 constructor nsSampleImpl::nsSampleImpl()
 //
-NS_GENERIC_FACTORY_CONSTRUCTOR(nsEngineeringMode)
+NS_GENERIC_FACTORY_SINGLETON_CONSTRUCTOR(nsEngineeringMode,
+                                         nsEngineeringMode::FactoryCreate)
 
 // The following line defines a kNS_SAMPLE_CID CID variable.
 NS_DEFINE_NAMED_CID(ENGINEERING_MODE_CID);

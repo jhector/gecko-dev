@@ -32,7 +32,7 @@ struct PluginAPI;
 class MessageHandlerArray;
 
 typedef nsDataHashtable<nsPtrHashKey<PRLibrary>, nsRefPtr<struct PluginAPI> > PluginTable;
-typedef nsDataHashtable<nsCStringHashKey, PluginHandler> NamespaceTable;
+typedef nsDataHashtable<nsCStringHashKey, PluginHandlerFn> NamespaceTable;
 typedef nsDataHashtable<nsCStringHashKey, nsRefPtr<MessageHandlerArray> > MessageHandlerTable;
 
 typedef struct PluginAPI
@@ -40,17 +40,17 @@ typedef struct PluginAPI
 public:
   PluginAPI();
 
-  void Release() {};
-  void AddRef() {};
+  void Release();
+  void AddRef();
 
-  PluginInit init;
-  PluginDestroy destroy;
+  PluginInitFn init;
+  PluginDestroyFn destroy;
 
 private:
   int32_t mRefCount;
 } PluginAPI;
 
-class MessageHandlerArray : public nsTArray<PluginRecvMessage>
+class MessageHandlerArray : public nsTArray<PluginRecvMessageFn>
 {
 public:
   MessageHandlerArray();
@@ -70,18 +70,19 @@ public:
   NS_DECL_NSIENGINEERINGMODE
   NS_DECL_NSIOBSERVER
 
-  nsEngineeringMode();
+  static already_AddRefed<nsEngineeringMode> FactoryCreate();
+
+  int RegisterNamespaceImpl(const char* aNs, PluginHandlerFn aHandler);
+  int RegisterMessageListenerImpl(const char* aTopic, PluginRecvMessageFn aHandler);
 
 private:
+  nsEngineeringMode();
   virtual ~nsEngineeringMode();
 
   void LoadPlugins();
   void UnloadPlugins();
 
   bool LoadPluginAPI(PRLibrary *aPlugin, struct PluginAPI *aApi);
-
-  int RegisterNamespace(const char* aNs, PluginHandler aHandler);
-  int RegisterMessageListener(const char* aTopic, PluginRecvMessage aHandler);
 
   NamespaceTable mNamespaces;
   MessageHandlerTable mMessageHandlers;

@@ -44,9 +44,7 @@ RegisterNamespace(const char* aNs, PluginHandlerFn aFn)
   // XXX: is this cast always possible??
   nsEngineeringMode* engmodeimpl =
     reinterpret_cast<nsEngineeringMode*>(engmode.get());
-  engmodeimpl->RegisterNamespaceImpl(aNs, aFn);
-
-  return PLUGIN_OK;
+  return engmodeimpl->RegisterNamespaceImpl(aNs, aFn);
 }
 
 static int
@@ -136,26 +134,30 @@ NS_IMETHODIMP
 nsEngineeringMode::GetValue(const nsAString& aName,
                             nsIEngineeringModeCallback* aCallback)
 {
+#if 0
   printf("this ptr: %p\n", this);
+#endif
+  int rv = -1;
+  const char *msg = nullptr;
+  PluginHandlerFn handler;
 
-  if (!aCallback) {
+  if (!aCallback || aName.FindChar(':') < 0) {
     return NS_ERROR_INVALID_ARG;
   }
-  /* Write your corresponding implementation here,
-   * then invoke |aCallback->Onsuccess| to return value.
-   * Or |aCallback->Onerror| to indicate an error happened.
-   *
-   * e.g. aCallback->Onsuccess(NS_LITERAL_STRING("bar"));
-   * e.g. aCallback->Onerror(-1);
-   *
-   * The returned value should be a DOMstring,
-   * while the returned error is a int32 error code.
-   */
-  if (aName.IsEmpty()) {
-    aCallback->Onerror(-1);
+
+  nsCString ns = NS_ConvertUTF16toUTF8(Substring(aName, 0, aName.FindChar(':')));
+
+  // TODO: msg should be owned by us and allocated by the plugin
+  if (!mNamespaces.Get(ns, &handler) ||
+      (rv = handler(NS_LossyConvertUTF16toASCII(aName).get(),
+                    nullptr,
+                    &msg,
+                    PLUGIN_HANDLE_GET))) {
+    aCallback->Onerror(rv);
   } else {
-    aCallback->Onsuccess(NS_LITERAL_STRING("bar"));
+    aCallback->Onsuccess(NS_ConvertASCIItoUTF16(msg));
   }
+
   return NS_OK;
 }
 
@@ -163,22 +165,21 @@ NS_IMETHODIMP
 nsEngineeringMode::SetValue(const nsAString& aName, const nsAString& aValue,
                             nsIEngineeringModeCallback* aCallback)
 {
-  if (!aCallback) {
+  int rv = -1;
+  PluginHandlerFn handler;
+
+  if (!aCallback || aName.FindChar(':') < 0) {
     return NS_ERROR_INVALID_ARG;
   }
-  /* Write your corresponding implementation here,
-   * then invoke |aCallback->Onsuccess| to indicate successful.
-   * Or |aCallback->Onerror| to indicate an error happened.
-   *
-   * e.g. aCallback->Onsuccess();
-   * e.g. aCallback->Onerror(-1);
-   *
-   * The returned value should be an empty DOMstring (just for passing
-   * compiling, won't be caught by the caller),
-   * while the returned error is a int32 error code.
-   */
-  if (aName.IsEmpty() || aValue.IsEmpty()) {
-    aCallback->Onerror(-1);
+
+  nsCString ns = NS_ConvertUTF16toUTF8(Substring(aName, 0, aName.FindChar(':')));
+
+  if (!mNamespaces.Get(ns, &handler) ||
+      (rv = handler(NS_LossyConvertUTF16toASCII(aName).get(),
+                    NS_LossyConvertUTF16toASCII(aValue).get(),
+                    nullptr,
+                    PLUGIN_HANDLE_SET))) {
+    aCallback->Onerror(rv);
   } else {
     aCallback->Onsuccess(NS_LITERAL_STRING(""));
   }

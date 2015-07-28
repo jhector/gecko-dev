@@ -11,18 +11,21 @@
 #define PLUGIN_ERROR (0)
 #define PLUGIN_OK (1)
 
-typedef int (*PluginHandlerFn)(const char* aFn, const char* aParam, const char** aRet);
-typedef int (*PluginRecvMessageFn)(const char* aTopic, const char* aParams);
+#define PLUGIN_HANDLE_GET (0)
+#define PLUGIN_HANDLE_SET (1)
 
-typedef int (*RegisterNamespaceFn)(const char* aNs, PluginHandlerFn aFn);
-typedef int (*RegisterMessageListenerFn)(const char* aTopic, PluginRecvMessageFn aFn);
+typedef int (*PluginHandlerFn)(const char*, const char*, const char**, int);
+typedef int (*PluginRecvMessageFn)(const char*, const char*);
+
+typedef int (*RegisterNamespaceFn)(const char*, PluginHandlerFn);
+typedef int (*RegisterMessageListenerFn)(const char*, PluginRecvMessageFn);
 
 typedef struct {
   RegisterNamespaceFn mRegisterNamespace;
   RegisterMessageListenerFn mRegisterMessageListener;
 } HostInterface;
 
-typedef int (*PluginInitFn)(HostInterface* aHostInterface);
+typedef int (*PluginInitFn)(HostInterface*);
 typedef void (*PluginDestroyFn)();
 
 #endif

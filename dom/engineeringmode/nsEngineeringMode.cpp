@@ -11,12 +11,37 @@
 
 #include "mozilla/Services.h"
 
+#include "nsIFile.h"
+#include "nsISimpleEnumerator.h"
+
 #include "nsCRT.h"
 #include "nsCOMPtr.h"
 #include "nsLiteralString.h"            // for NS_LITERAL_STRING
 
 namespace mozilla {
 namespace dom {
+
+PluginAPI::PluginAPI()
+  : mRefCount(0)
+{}
+
+void
+PluginAPI::Release()
+{
+  NS_PRECONDITION(int32_t(mRefCount) != 0, "dup release");
+  int32_t count = --mRefCount;
+  NS_LOG_RELEASE(this, count, "EngineeringMode::PluginAPI");
+
+  if (count == 0)
+    delete this;
+}
+
+void
+PluginAPI::AddRef()
+{
+  NS_PRECONDITION(int32_t(mRefCount) >= 0, "illegal refcount");
+  NS_LOG_ADDREF(this, mRefCount++, "EngineeringMode::PluginAPI", sizeof(*this));
+}
 
 MessageHandlerArray::MessageHandlerArray()
   : mRefCount(0)
@@ -27,7 +52,7 @@ MessageHandlerArray::Release()
 {
   NS_PRECONDITION(int32_t(mRefCount) != 0, "dup release");
   int32_t count = --mRefCount;
-  NS_LOG_RELEASE(this, count, "MessageHandlerArray");
+  NS_LOG_RELEASE(this, count, "EngineeringMode::MessageHandlerArray");
 
   if (count == 0)
     delete this;
@@ -37,7 +62,7 @@ void
 MessageHandlerArray::AddRef()
 {
   NS_PRECONDITION(int32_t(mRefCount) >= 0, "illegal refcount");
-  NS_LOG_ADDREF(this, mRefCount++, "MessageHandlerArray", sizeof(*this));
+  NS_LOG_ADDREF(this, mRefCount++, "EngineeringMode::MessageHandlerArray", sizeof(*this));
 }
 
 
@@ -147,10 +172,62 @@ nsEngineeringMode::Observe(nsISupports *aSubject, const char *aTopic, const
 void
 nsEngineeringMode::LoadPlugins()
 {
-  /* dlopen()/dlsym() everything in a specific directory */
 #if 1
   printf("[%d] nsEngineeringMode::LoadPlugins()\n", getpid());
 #endif
+  nsresult rv;
+
+  nsCOMPtr<nsIFile> pluginDir = do_CreateInstance("@mozilla.org/file/local;1", &rv);
+  if (NS_FAILED(rv)) {
+    NS_ERROR("Failed to get nsIFile instance");
+    return;
+  }
+
+  rv = pluginDir->InitWithPath(NS_LITERAL_STRING(PLUGIN_PATH));
+  if (NS_FAILED(rv)) {
+    NS_ERROR("Failed to open plugin path: " PLUGIN_PATH);
+    return;
+  }
+
+  nsCOMPtr<nsISimpleEnumerator> iter;
+  rv = pluginDir->GetDirectoryEntries(getter_AddRefs(iter));
+  if (NS_FAILED(rv)) {
+    NS_ERROR("Failed to get directory entries");
+    return;
+  }
+
+  bool hasMore = false;
+  while (NS_SUCCEEDED(iter->HasMoreElements(&hasMore)) && hasMore) {
+    nsCOMPtr<nsISupports> supports;
+    rv = iter->GetNext(getter_AddRefs(supports));
+    if (NS_FAILED(rv))
+      continue;
+
+    nsCOMPtr<nsIFile> entry(do_QueryInterface(supports, &rv));
+    if (NS_FAILED(rv))
+      continue;
+
+    /* we assume that every file in this directory is a loadable shared library */
+    PRLibrary *plugin;
+    rv = entry->Load(&plugin);
+    if (NS_FAILED(rv))
+      continue;
+
+    nsRefPtr<PluginAPI> api = new PluginAPI();
+    if (!LoadPluginAPI(plugin, api)) {
+      PR_UnloadLibrary(plugin);
+      continue;
+    }
+
+    /* TODO: fix call */
+    if (api->init(nullptr) == PLUGIN_ERROR) {
+      PR_UnloadLibrary(plugin);
+      continue;
+    }
+
+    /* plugin initializaiton completed and successful */
+    mLoadedPlugins.Put(plugin, api);
+  }
 }
 
 void
@@ -160,6 +237,24 @@ nsEngineeringMode::UnloadPlugins()
 #if 1
   printf("nsEngineeringMode::UnloadPlugins()\n");
 #endif
+}
+
+bool
+nsEngineeringMode::LoadPluginAPI(PRLibrary *aPlugin, struct PluginAPI *aApi)
+{
+  aApi->init = (PluginInit) PR_FindSymbol(aPlugin, "PluginInit");
+  if (!aApi->init) {
+    NS_WARNING("plugin is missing 'PluginInit' export");
+    return false;
+  }
+
+  aApi->destroy = (PluginDestroy) PR_FindSymbol(aPlugin, "PluginDestroy");
+  if (!aApi->destroy) {
+    NS_WARNING("plugin is missing 'PluginDestroy' export");
+    return false;
+  }
+
+  return true;
 }
 
 /* Functions exposed to the plugins */

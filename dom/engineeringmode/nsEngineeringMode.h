@@ -8,6 +8,8 @@
 
 #include "nsIEngineeringMode.h"
 
+#include "prlink.h"
+
 #include "nsTArray.h"
 #include "nsRefPtr.h"
 #include "nsDataHashtable.h"
@@ -26,10 +28,27 @@
 namespace mozilla {
 namespace dom {
 
+struct PluginAPI;
 class MessageHandlerArray;
 
+typedef nsDataHashtable<nsPtrHashKey<PRLibrary>, nsRefPtr<struct PluginAPI> > PluginTable;
 typedef nsDataHashtable<nsCStringHashKey, PluginHandler> NamespaceTable;
 typedef nsDataHashtable<nsCStringHashKey, nsRefPtr<MessageHandlerArray> > MessageHandlerTable;
+
+typedef struct PluginAPI
+{
+public:
+  PluginAPI();
+
+  void Release() {};
+  void AddRef() {};
+
+  PluginInit init;
+  PluginDestroy destroy;
+
+private:
+  int32_t mRefCount;
+} PluginAPI;
 
 class MessageHandlerArray : public nsTArray<PluginRecvMessage>
 {
@@ -59,11 +78,14 @@ private:
   void LoadPlugins();
   void UnloadPlugins();
 
+  bool LoadPluginAPI(PRLibrary *aPlugin, struct PluginAPI *aApi);
+
   int RegisterNamespace(const char* aNs, PluginHandler aHandler);
   int RegisterMessageListener(const char* aTopic, PluginRecvMessage aHandler);
 
   NamespaceTable mNamespaces;
   MessageHandlerTable mMessageHandlers;
+  PluginTable mLoadedPlugins;
 };
 
 } // dom

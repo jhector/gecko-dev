@@ -6,6 +6,8 @@
 #ifndef mozilla_dom_engineeringmode_EngineeringPlugin_h
 #define mozilla_dom_engineeringmode_EngineeringPlugin_h
 
+#define PLUGIN_PATH "/system/b2g/plugins/"
+
 #define PLUGIN_ERROR (0)
 #define PLUGIN_OK (1)
 
@@ -21,5 +23,6 @@ typedef struct {
 } HostInterface;
 
 typedef int (*PluginInit)(HostInterface* aHostInterface);
+typedef void (*PluginDestroy)();
 
 #endif

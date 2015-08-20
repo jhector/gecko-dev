@@ -152,7 +152,7 @@ nsEngineeringMode::GetValue(const nsAString& aName,
       (rv = handler(NS_LossyConvertUTF16toASCII(aName).get(),
                     nullptr,
                     &msg,
-                    PLUGIN_HANDLE_GET))) {
+                    PLUGIN_HANDLE_GET)) != PLUGIN_OK) {
     aCallback->Onerror(rv);
   } else {
     aCallback->Onsuccess(NS_ConvertASCIItoUTF16(msg));
@@ -178,7 +178,7 @@ nsEngineeringMode::SetValue(const nsAString& aName, const nsAString& aValue,
       (rv = handler(NS_LossyConvertUTF16toASCII(aName).get(),
                     NS_LossyConvertUTF16toASCII(aValue).get(),
                     nullptr,
-                    PLUGIN_HANDLE_SET))) {
+                    PLUGIN_HANDLE_SET)) != PLUGIN_OK) {
     aCallback->Onerror(rv);
   } else {
     aCallback->Onsuccess(NS_LITERAL_STRING(""));

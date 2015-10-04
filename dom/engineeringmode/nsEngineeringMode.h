@@ -11,7 +11,7 @@
 #include "prlink.h"
 
 #include "nsTArray.h"
-#include "nsRefPtr.h"
+#include "mozilla/nsRefPtr.h"
 #include "nsDataHashtable.h"
 
 #include "nsIObserver.h"

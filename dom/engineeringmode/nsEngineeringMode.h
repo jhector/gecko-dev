@@ -28,32 +28,16 @@
 namespace mozilla {
 namespace dom {
 
-struct PluginAPI;
-class MessageHandlerArray;
+class PluginInterfaceArray;
 
-typedef nsDataHashtable<nsPtrHashKey<PRLibrary>, nsRefPtr<struct PluginAPI> > PluginTable;
-typedef nsDataHashtable<nsCStringHashKey, PluginHandlerFn> NamespaceTable;
-typedef nsDataHashtable<nsCStringHashKey, nsRefPtr<MessageHandlerArray> > MessageHandlerTable;
+typedef nsDataHashtable<nsPtrHashKey<PRLibrary>, struct MozEngPluginInterface* > PluginTable;
+typedef nsDataHashtable<nsCStringHashKey, struct MozEngPluginInterface* > NamespaceTable;
+typedef nsDataHashtable<nsCStringHashKey, nsRefPtr<PluginInterfaceArray> > MessageHandlerTable;
 
-typedef struct PluginAPI
+class PluginInterfaceArray : public nsTArray<struct MozEngPluginInterface*>
 {
 public:
-  PluginAPI();
-
-  void Release();
-  void AddRef();
-
-  PluginInitFn init;
-  PluginDestroyFn destroy;
-
-private:
-  int32_t mRefCount;
-} PluginAPI;
-
-class MessageHandlerArray : public nsTArray<PluginRecvMessageFn>
-{
-public:
-  MessageHandlerArray();
+  PluginInterfaceArray();
 
   void Release();
   void AddRef();
@@ -72,8 +56,10 @@ public:
 
   static already_AddRefed<nsEngineeringMode> FactoryCreate();
 
-  int RegisterNamespaceImpl(const char* aNs, PluginHandlerFn aHandler);
-  int RegisterMessageListenerImpl(const char* aTopic, PluginRecvMessageFn aHandler);
+  int RegisterNamespaceImpl(const char* aNs,
+                            struct MozEngPluginInterface* aInterface);
+  int RegisterMessageListenerImpl(const char* aTopic,
+                                  struct MozEngPluginInterface* aInterface);
 
 private:
   nsEngineeringMode();
@@ -82,7 +68,8 @@ private:
   void LoadPlugins();
   void UnloadPlugins();
 
-  bool LoadPluginAPI(PRLibrary *aPlugin, struct PluginAPI *aApi);
+  bool LoadPluginInterface(PRLibrary* aPlugin,
+                           struct MozEngPluginInterface** aInterface);
 
   NamespaceTable mNamespaces;
   MessageHandlerTable mMessageHandlers;

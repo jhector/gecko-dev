@@ -26,7 +26,8 @@ namespace dom {
 mozilla::StaticRefPtr<nsEngineeringMode> gEngineeringMode;
 
 static int
-RegisterNamespace(const char* aNs, PluginHandlerFn aFn)
+RegisterNamespaceCallback(const char* aNs,
+                          struct MozEngPluginInterface* aInterface)
 {
   nsresult rv = NS_OK;
   nsCOMPtr<nsIEngineeringMode> engmode =
@@ -44,25 +45,26 @@ RegisterNamespace(const char* aNs, PluginHandlerFn aFn)
   // XXX: is this cast always possible??
   nsEngineeringMode* engmodeimpl =
     reinterpret_cast<nsEngineeringMode*>(engmode.get());
-  return engmodeimpl->RegisterNamespaceImpl(aNs, aFn);
+  return engmodeimpl->RegisterNamespaceImpl(aNs, aInterface);
 }
 
 static int
-RegisterMessageListener(const char* aTopic, PluginRecvMessageFn aFn)
+RegisterMessageListenerCallback(const char* aTopic,
+                                struct MozEngPluginInterface *aInterface)
 {
   return PLUGIN_ERROR;
 }
 
-PluginAPI::PluginAPI()
+PluginInterfaceArray::PluginInterfaceArray()
   : mRefCount(0)
 {}
 
 void
-PluginAPI::Release()
+PluginInterfaceArray::Release()
 {
   NS_PRECONDITION(int32_t(mRefCount) != 0, "dup release");
   int32_t count = --mRefCount;
-  NS_LOG_RELEASE(this, count, "EngineeringMode::PluginAPI");
+  NS_LOG_RELEASE(this, count, "EngineeringMode::PluginInterfaceArray");
 
   if (count == 0) {
     delete this;
@@ -70,33 +72,10 @@ PluginAPI::Release()
 }
 
 void
-PluginAPI::AddRef()
+PluginInterfaceArray::AddRef()
 {
   NS_PRECONDITION(int32_t(mRefCount) >= 0, "illegal refcount");
-  NS_LOG_ADDREF(this, mRefCount++, "EngineeringMode::PluginAPI", sizeof(*this));
-}
-
-MessageHandlerArray::MessageHandlerArray()
-  : mRefCount(0)
-{}
-
-void
-MessageHandlerArray::Release()
-{
-  NS_PRECONDITION(int32_t(mRefCount) != 0, "dup release");
-  int32_t count = --mRefCount;
-  NS_LOG_RELEASE(this, count, "EngineeringMode::MessageHandlerArray");
-
-  if (count == 0) {
-    delete this;
-  }
-}
-
-void
-MessageHandlerArray::AddRef()
-{
-  NS_PRECONDITION(int32_t(mRefCount) >= 0, "illegal refcount");
-  NS_LOG_ADDREF(this, mRefCount++, "EngineeringMode::MessageHandlerArray", sizeof(*this));
+  NS_LOG_ADDREF(this, mRefCount++, "EngineeringMode::PluginInterfaceArray", sizeof(*this));
 }
 
 
@@ -134,12 +113,9 @@ NS_IMETHODIMP
 nsEngineeringMode::GetValue(const nsAString& aName,
                             nsIEngineeringModeCallback* aCallback)
 {
-#if 0
-  printf("this ptr: %p\n", this);
-#endif
   int rv = -1;
-  const char *msg = nullptr;
-  PluginHandlerFn handler;
+  const char* msg = nullptr;
+  struct MozEngPluginInterface* interface;
 
   if (!aCallback || aName.FindChar(':') < 0) {
     return NS_ERROR_INVALID_ARG;
@@ -148,11 +124,19 @@ nsEngineeringMode::GetValue(const nsAString& aName,
   nsCString ns = NS_ConvertUTF16toUTF8(Substring(aName, 0, aName.FindChar(':')));
 
   // TODO: msg should be owned by us and allocated by the plugin
-  if (!mNamespaces.Get(ns, &handler) ||
-      (rv = handler(NS_LossyConvertUTF16toASCII(aName).get(),
-                    nullptr,
-                    &msg,
-                    PLUGIN_HANDLE_GET)) != PLUGIN_OK) {
+  if (!mNamespaces.Get(ns, &interface)) {
+    aCallback->Onerror(rv);
+    return NS_OK;
+  }
+
+#if 1
+  printf("Got interface at %p and handle at %p\n", interface, interface->handle);
+#endif
+
+  if ((rv = interface->handle(NS_LossyConvertUTF16toASCII(aName).get(),
+                              nullptr,
+                              &msg,
+                              PLUGIN_HANDLE_GET)) != PLUGIN_OK) {
     aCallback->Onerror(rv);
   } else {
     aCallback->Onsuccess(NS_ConvertASCIItoUTF16(msg));
@@ -166,7 +150,7 @@ nsEngineeringMode::SetValue(const nsAString& aName, const nsAString& aValue,
                             nsIEngineeringModeCallback* aCallback)
 {
   int rv = -1;
-  PluginHandlerFn handler;
+  struct MozEngPluginInterface* interface;
 
   if (!aCallback || aName.FindChar(':') < 0) {
     return NS_ERROR_INVALID_ARG;
@@ -174,11 +158,11 @@ nsEngineeringMode::SetValue(const nsAString& aName, const nsAString& aValue,
 
   nsCString ns = NS_ConvertUTF16toUTF8(Substring(aName, 0, aName.FindChar(':')));
 
-  if (!mNamespaces.Get(ns, &handler) ||
-      (rv = handler(NS_LossyConvertUTF16toASCII(aName).get(),
-                    NS_LossyConvertUTF16toASCII(aValue).get(),
-                    nullptr,
-                    PLUGIN_HANDLE_SET)) != PLUGIN_OK) {
+  if (!mNamespaces.Get(ns, &interface) ||
+      (rv = interface->handle(NS_LossyConvertUTF16toASCII(aName).get(),
+                              NS_LossyConvertUTF16toASCII(aValue).get(),
+                              nullptr,
+                              PLUGIN_HANDLE_SET)) != PLUGIN_OK) {
     aCallback->Onerror(rv);
   } else {
     aCallback->Onsuccess(NS_LITERAL_STRING(""));
@@ -263,30 +247,36 @@ nsEngineeringMode::LoadPlugins()
     if (NS_FAILED(rv))
       continue;
 
-    /* we assume that every file in this directory is a loadable shared library */
+    // we assume that every file in this directory is a loadable shared library
     PRLibrary *plugin;
     rv = entry->Load(&plugin);
     if (NS_FAILED(rv))
       continue;
 
-    nsRefPtr<PluginAPI> api = new PluginAPI();
-    if (!LoadPluginAPI(plugin, api)) {
+    /*
+     * |pluginInterface| is allocated by the plugin and should be free()ed
+     * by the plugin when |interface->destroy| is called
+     * no refcounting needed in Gecko
+     */
+    struct MozEngPluginInterface* pluginInterface;
+
+    if (!LoadPluginInterface(plugin, &pluginInterface)) {
       PR_UnloadLibrary(plugin);
       continue;
     }
 
-    HostInterface interface = {
-      .mRegisterNamespace = &RegisterNamespace,
-      .mRegisterMessageListener = &RegisterMessageListener
+    HostInterface hostInterface = {
+      .register_namespace_callback = &RegisterNamespaceCallback,
+      .register_message_listener_callback = &RegisterMessageListenerCallback
     };
 
-    if (api->init(&interface) == PLUGIN_ERROR) {
+    if (pluginInterface->init(pluginInterface, &hostInterface) == PLUGIN_ERROR) {
       PR_UnloadLibrary(plugin);
       continue;
     }
 
     /* plugin initializaiton completed and successful */
-    mLoadedPlugins.Put(plugin, api);
+    mLoadedPlugins.Put(plugin, pluginInterface);
   }
 }
 
@@ -300,17 +290,27 @@ nsEngineeringMode::UnloadPlugins()
 }
 
 bool
-nsEngineeringMode::LoadPluginAPI(PRLibrary *aPlugin, struct PluginAPI *aApi)
+nsEngineeringMode::LoadPluginInterface(
+    PRLibrary *aPlugin,
+    struct MozEngPluginInterface** aInterface)
 {
-  aApi->init = (PluginInitFn) PR_FindSymbol(aPlugin, "PluginInit");
-  if (!aApi->init) {
-    NS_WARNING("plugin is missing 'PluginInit' export");
+  PluginGetInterface getInterface;
+  getInterface = (PluginGetInterface)PR_FindSymbol(
+      aPlugin,
+      "moz_get_engineering_mode_interface");
+
+  if (!getInterface) {
+    NS_WARNING("plugin is missing 'moz_get_engineering_mode_interface' export");
     return false;
   }
 
-  aApi->destroy = (PluginDestroyFn) PR_FindSymbol(aPlugin, "PluginDestroy");
-  if (!aApi->destroy) {
-    NS_WARNING("plugin is missing 'PluginDestroy' export");
+  uint32_t major = 0, minor = 0;
+  *aInterface = getInterface(&major, &minor);
+
+  // TODO: version check
+
+  if (!*aInterface) {
+    NS_WARNING("plugin didn't return a interface");
     return false;
   }
 
@@ -319,38 +319,41 @@ nsEngineeringMode::LoadPluginAPI(PRLibrary *aPlugin, struct PluginAPI *aApi)
 
 /* Functions exposed to the plugins */
 int
-nsEngineeringMode::RegisterNamespaceImpl(const char *aNs, PluginHandlerFn aHandler)
+nsEngineeringMode::RegisterNamespaceImpl(
+    const char *aNs,
+    struct MozEngPluginInterface* aInterface)
 {
 #if 1
   printf("Inside RegisterNamespaceImpl\n");
 #endif
-  PluginHandlerFn handler;
-  if (mNamespaces.Get(nsCString(aNs), &handler))
+  struct MozEngPluginInterface* interface;
+  if (mNamespaces.Get(nsCString(aNs), &interface))
     return PLUGIN_ERROR;
 
-  mNamespaces.Put(nsCString(aNs), aHandler);
+  mNamespaces.Put(nsCString(aNs), aInterface);
   return PLUGIN_OK;
 }
 
 int
-nsEngineeringMode::RegisterMessageListenerImpl(const char *aTopic,
-                                           PluginRecvMessageFn aHandler)
+nsEngineeringMode::RegisterMessageListenerImpl(
+    const char *aTopic,
+    struct MozEngPluginInterface* aInterface)
 {
   /* TODO: register for the message */
 
-  nsRefPtr<MessageHandlerArray> handlers;
-  if (mMessageHandlers.Get(nsCString(aTopic), &handlers)) {
-    if (handlers->Contains(aHandler)) {
+  nsRefPtr<PluginInterfaceArray> interfaces;
+  if (mMessageHandlers.Get(nsCString(aTopic), &interfaces)) {
+    if (interfaces->Contains(aInterface)) {
       return PLUGIN_OK;
     }
 
-    handlers->AppendElement(aHandler);
+    interfaces->AppendElement(aInterface);
     return PLUGIN_OK;
   }
 
-  handlers = new MessageHandlerArray;
-  handlers->AppendElement(aHandler);
-  mMessageHandlers.Put(nsCString(aTopic), handlers);
+  interfaces = new PluginInterfaceArray;
+  interfaces->AppendElement(aInterface);
+  mMessageHandlers.Put(nsCString(aTopic), interfaces);
   return PLUGIN_OK;
 }
 

@@ -60,6 +60,11 @@ if not CONFIG['JS_STANDALONE']:
             'Nuwa.cpp',
         ]
 
+    if CONFIG['MOZ_B2G_SELINUX']:
+        USE_LIBS += [
+            'selinux',
+        ]
+
     EXPORTS.mozilla += [
         'arm.h',
         'SSE.h',

@@ -23,6 +23,10 @@
 #include <sys/syscall.h>
 #include <vector>
 
+#if MOZ_B2G_SELINUX
+#include <selinux/selinux.h>
+#endif
+
 #include "mozilla/Alignment.h"
 #include "mozilla/LinkedList.h"
 #include "mozilla/TaggedAnonymousMemory.h"
@@ -1793,6 +1797,12 @@ ForkIPCProcess() {
     AddNewProcess(pid, sProtoFdInfos, sProtoFdInfosSize);
     CloseAllProtoSockets(sProtoFdInfos, sProtoFdInfosSize);
   } else {
+#if MOZ_B2G_SELINUX
+    security_context_t* ctx;
+    if (getcon(&ctx) == -1) {
+      // TODO: handle
+    }
+#endif
     // in the child
     sIsNuwaChildProcess = true;
     if (getenv("MOZ_DEBUG_CHILD_PROCESS")) {

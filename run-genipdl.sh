@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 GIPDL=./ipc/ipdl/dipdl.py
 
 IPDL_SRS=$(find . -path ./ipc/ipdl/test -prune -o -path ./ipc/testshell -prune -o -name '*.ipdl' -print);

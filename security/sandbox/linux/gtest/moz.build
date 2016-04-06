@@ -11,6 +11,7 @@ SOURCES = [
     '../SandboxUtil.cpp',
     'TestBroker.cpp',
     'TestBrokerPolicy.cpp',
+    'TestHooks.cpp',
     'TestSandboxUtil.cpp',
 ]
 

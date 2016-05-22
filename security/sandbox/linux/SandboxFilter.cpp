@@ -618,6 +618,9 @@ public:
     case __NR_inotify_add_watch:
     case __NR_inotify_rm_watch:
       return Allow();
+
+    case __NR_getsockopt:
+      return Allow();
 #endif
 
       // nsSystemInfo uses uname (and we cache an instance, so

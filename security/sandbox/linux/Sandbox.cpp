@@ -65,6 +65,8 @@ __sanitizer_sandbox_on_notify(__sanitizer_sandbox_arguments *args);
 } // extern "C"
 #endif // MOZ_ASAN
 
+extern int gBroadcastSignum;
+
 namespace mozilla {
 
 #ifdef ANDROID
@@ -307,7 +309,6 @@ EnterChroot()
 static void
 BroadcastSetThreadSandbox(const sock_fprog* aFilter)
 {
-  int signum;
   pid_t pid, tid, myTid;
   DIR *taskdp;
   struct dirent *de;
@@ -327,19 +328,6 @@ BroadcastSetThreadSandbox(const sock_fprog* aFilter)
   }
 
   EnterChroot();
-
-  signum = FindFreeSignalNumber();
-  if (signum == 0) {
-    SANDBOX_LOG_ERROR("No available signal numbers!");
-    MOZ_CRASH();
-  }
-  void (*oldHandler)(int);
-  oldHandler = signal(signum, SetThreadSandboxHandler);
-  if (oldHandler != SIG_DFL) {
-    // See the comment on FindFreeSignalNumber about race conditions.
-    SANDBOX_LOG_ERROR("signal %d in use by handler %p!\n", signum, oldHandler);
-    MOZ_CRASH();
-  }
 
   // In case this races with a not-yet-deprivileged thread cloning
   // itself, repeat iterating over all threads until we find none
@@ -362,7 +350,7 @@ BroadcastSetThreadSandbox(const sock_fprog* aFilter)
       }
       // Reset the futex cell and signal.
       gSetSandboxDone = 0;
-      if (syscall(__NR_tgkill, pid, tid, signum) != 0) {
+      if (syscall(__NR_tgkill, pid, tid, gBroadcastSignum) != 0) {
         if (errno == ESRCH) {
           SANDBOX_LOG_ERROR("Thread %d unexpectedly exited.", tid);
           // Rescan threads, in case it forked before exiting.
@@ -432,11 +420,13 @@ BroadcastSetThreadSandbox(const sock_fprog* aFilter)
     }
     rewinddir(taskdp);
   } while (sandboxProgress);
-  oldHandler = signal(signum, SIG_DFL);
+
+  void (*oldHandler)(int);
+  oldHandler = signal(gBroadcastSignum, SIG_DFL);
   if (oldHandler != SetThreadSandboxHandler) {
     // See the comment on FindFreeSignalNumber about race conditions.
     SANDBOX_LOG_ERROR("handler for signal %d was changed to %p!",
-                      signum, oldHandler);
+                      gBroadcastSignum, oldHandler);
     MOZ_CRASH();
   }
   Unused << closedir(taskdp);
@@ -556,6 +546,24 @@ SandboxEarlyInit(GeckoProcessType aType, bool aIsNuwa)
   default:
     // Other cases intentionally left blank.
     break;
+  }
+
+  // If TSYNC is not supported, set up signal handler
+  // used to enable seccomp on each thread.
+  if (!info.Test(SandboxInfo::kHasSeccompTSync)) {
+    gBroadcastSignum = FindFreeSignalNumber();
+    if (gBroadcastSignum == 0) {
+      SANDBOX_LOG_ERROR("No available signal numbers!");
+      MOZ_CRASH();
+    }
+
+    void (*oldHandler)(int);
+    oldHandler = signal(gBroadcastSignum, SetThreadSandboxHandler);
+    if (oldHandler != SIG_DFL) {
+      // See the comment on FindFreeSignalNumber about race conditions.
+      SANDBOX_LOG_ERROR("signal %d in use by handler %p!\n", gBroadcastSignum, oldHandler);
+      MOZ_CRASH();
+    }
   }
 
   // If there's nothing to do, then we're done.

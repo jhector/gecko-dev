@@ -36,6 +36,7 @@
 #include "mozilla/dom/network/UDPSocketChild.h"
 #include "nsID.h"
 #include "nsTraceRefcnt.h"
+#include "AudioChild.h"
 
 namespace {
 
@@ -504,6 +505,20 @@ BackgroundChildImpl::DeallocPGamepadTestChannelChild(PGamepadTestChannelChild* a
   MOZ_ASSERT(aActor);
   delete static_cast<dom::GamepadTestChannelChild*>(aActor);
 #endif
+  return true;
+}
+
+audio::PAudioChild*
+BackgroundChildImpl::AllocPAudioChild()
+{
+  return audio::CreateAudioChild();
+}
+
+bool
+BackgroundChildImpl::DeallocPAudioChild(audio::PAudioChild *aActor)
+{
+  MOZ_ASSERT(aActor);
+  delete aActor;
   return true;
 }
 

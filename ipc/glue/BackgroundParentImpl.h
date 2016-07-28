@@ -206,6 +206,12 @@ protected:
 
   virtual bool
   DeallocPGamepadTestChannelParent(PGamepadTestChannelParent* aActor) override;
+
+  virtual PAudioParent*
+  AllocPAudioParent() override;
+
+  virtual bool
+  DeallocPAudioParent(PAudioParent* aActor) override;
 };
 
 } // namespace ipc

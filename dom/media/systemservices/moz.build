@@ -6,6 +6,8 @@
 
 if CONFIG['MOZ_WEBRTC']:
     EXPORTS += [
+        'AudioChild.h',
+        'AudioParent.h',
         'CamerasChild.h',
         'CamerasParent.h',
         'LoadManager.h',
@@ -13,6 +15,8 @@ if CONFIG['MOZ_WEBRTC']:
         'LoadMonitor.h',
     ]
     UNIFIED_SOURCES += [
+        'AudioChild.cpp',
+        'AudioParent.cpp',
         'CamerasChild.cpp',
         'CamerasParent.cpp',
         'LoadManager.cpp',
@@ -86,6 +90,7 @@ UNIFIED_SOURCES += [
     'MediaUtils.cpp',
 ]
 IPDL_SOURCES += [
+    'PAudio.ipdl',
     'PCameras.ipdl',
     'PMedia.ipdl',
     'PMediaSystemResourceManager.ipdl',

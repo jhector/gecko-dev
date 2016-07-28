@@ -50,6 +50,7 @@
 #include "nsTraceRefcnt.h"
 #include "nsXULAppAPI.h"
 #include "ServiceWorkerManagerParent.h"
+#include "AudioParent.h"
 
 #ifdef DISABLE_ASSERTS_FOR_FUZZING
 #define ASSERT_UNLESS_FUZZING(...) do { } while (0)
@@ -945,6 +946,20 @@ BackgroundParentImpl::DeallocPGamepadTestChannelParent(dom::PGamepadTestChannelP
   RefPtr<dom::GamepadTestChannelParent> parent =
     dont_AddRef(static_cast<dom::GamepadTestChannelParent*>(aActor));
 #endif
+  return true;
+}
+
+audio::PAudioParent*
+BackgroundParentImpl::AllocPAudioParent()
+{
+  return audio::CreateAudioParent();
+}
+
+bool
+BackgroundParentImpl::DeallocPAudioParent(audio::PAudioParent *aActor)
+{
+  MOZ_ASSERT(aActor);
+  delete aActor;
   return true;
 }
 

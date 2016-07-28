@@ -178,6 +178,12 @@ protected:
 
   virtual bool
   DeallocPGamepadTestChannelChild(PGamepadTestChannelChild* aActor) override;
+
+  virtual PAudioChild*
+  AllocPAudioChild() override;
+
+  virtual bool
+  DeallocPAudioChild(PAudioChild* aActor) override;
 };
 
 class BackgroundChildImpl::ThreadLocal final

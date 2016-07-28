@@ -22,6 +22,7 @@ include protocol PSendStream;
 include protocol PServiceWorkerManager;
 include protocol PUDPSocket;
 include protocol PVsync;
+include protocol PAudio;
 
 include DOMTypes;
 include PBackgroundSharedTypes;
@@ -65,6 +66,7 @@ sync protocol PBackground
   manages PServiceWorkerManager;
   manages PUDPSocket;
   manages PVsync;
+  manages PAudio;
 
 parent:
   // Only called at startup during mochitests to check the basic infrastructure.
@@ -107,6 +109,8 @@ parent:
   async PGamepadEventChannel();
 
   async PGamepadTestChannel();
+
+  async PAudio();
 
 child:
   async PCache();

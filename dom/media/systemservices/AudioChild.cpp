@@ -5,8 +5,36 @@
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 #include "AudioChild.h"
 
+#include "mozilla/ipc/BackgroundChild.h"
+#include "mozilla/ipc/PBackgroundChild.h"
+
 namespace mozilla {
 namespace audio {
+
+static PAudioChild* sAudio;
+
+static AudioChild*
+Audio()
+{
+  if (!sAudio) {
+    // Try to get PBackground handle
+    ipc::PBackgroundChild backgroundChild =
+      ipc::BackgroundChild::GetForCurrentThread();
+
+    // If it doesn't exist yet, wait for it
+    if (!backgroundChild) {
+      backgroundChild =
+        ipc::BackgroundChild::SynchronouslyCreateForCurrentThread();
+    }
+
+    // By now, we should have a PBackground
+    MOZ_RELEASE_ASSERT(backgroundChild);
+    sAudio = backgroundChild->SendPAudioConstructor();
+  }
+
+  MOZ_ASSERT(sAudio);
+  return static_cast<AudioChild*>(sAudio);
+}
 
 AudioChild::AudioChild()
 {

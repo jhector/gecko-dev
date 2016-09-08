@@ -38,7 +38,7 @@ Audio()
 
 int CubebInit(cubeb** aContext, char const* aContextName)
 {
-  int id;
+  uint32_t id;
   nsAutoCString name(aContextName);
 
   if (!Audio()->SendCubebInit(name, &id)) {

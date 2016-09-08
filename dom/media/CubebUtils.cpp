@@ -16,6 +16,7 @@
 #include "mozilla/Logging.h"
 #include "nsThreadUtils.h"
 #include "CubebUtils.h"
+#include "AudioChild.h"
 #include "nsAutoRef.h"
 #include "prdtoa.h"
 
@@ -226,7 +227,12 @@ cubeb* GetCubebContextUnlocked()
       sBrandName, "Did not initialize sbrandName, and not on the main thread?");
   }
 
-  int rv = cubeb_init(&sCubebContext, sBrandName);
+  int rv = CUBEB_ERROR;
+  if (XRE_GetProcessType() == GeckoProcessType_Content) {
+    rv = mozilla::audio::CubebInit(&sCubebContext, sBrandName);
+  } else {
+    rv = cubeb_init(&sCubebContext, sBrandName);
+  }
   NS_WARNING_ASSERTION(rv == CUBEB_OK, "Could not get a cubeb context.");
   sCubebState = (rv == CUBEB_OK) ? CubebState::Initialized : CubebState::Uninitialized;
 

@@ -12,6 +12,8 @@ sync protocol PAudio
   manager PBackground;
 
 parent:
+  sync CubebInit(nsCString name) returns (int id);
+
   async __delete__();
 };
 

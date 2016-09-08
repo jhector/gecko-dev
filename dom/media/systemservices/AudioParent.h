@@ -9,6 +9,8 @@
 
 #include "mozilla/audio/PAudioParent.h"
 
+#include "cubeb/cubeb.h"
+
 namespace mozilla {
 namespace audio {
 
@@ -20,7 +22,12 @@ public:
   AudioParent();
   virtual ~AudioParent();
 
+  virtual bool RecvCubebInit(const nsCString& aName, int* aId) override;
+
   virtual void ActorDestroy(ActorDestroyReason aWhy) override;
+
+protected:
+  nsTArray<cubeb*> mCubebContexts;
 };
 
 PAudioParent* CreateAudioParent();

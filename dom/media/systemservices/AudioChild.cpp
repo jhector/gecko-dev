@@ -18,7 +18,7 @@ Audio()
 {
   if (!sAudio) {
     // Try to get PBackground handle
-    ipc::PBackgroundChild backgroundChild =
+    ipc::PBackgroundChild* backgroundChild =
       ipc::BackgroundChild::GetForCurrentThread();
 
     // If it doesn't exist yet, wait for it
@@ -34,6 +34,21 @@ Audio()
 
   MOZ_ASSERT(sAudio);
   return static_cast<AudioChild*>(sAudio);
+}
+
+int CubebInit(cubeb** aContext, char const* aContextName)
+{
+  int id;
+  nsAutoCString name(aContextName);
+
+  if (!Audio()->SendCubebInit(name, &id)) {
+    return CUBEB_ERROR;
+  }
+
+  // cubeb context will be a pointer of the id value
+ *aContext = reinterpret_cast<cubeb*>(id);
+
+  return CUBEB_OK;
 }
 
 AudioChild::AudioChild()

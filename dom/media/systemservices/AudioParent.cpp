@@ -5,8 +5,26 @@
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 #include "AudioParent.h"
 
+#include <cstdio>
+
 namespace mozilla {
 namespace audio {
+
+bool
+AudioParent::RecvCubebInit(const nsCString& aName, int* aId)
+{
+  cubeb* ctx;
+
+  int rv = cubeb_init(&ctx, aName.get());
+  if (rv != CUBEB_OK) {
+    return false;
+  }
+
+  *aId = mCubebContexts.Length();
+  mCubebContexts.AppendElement(ctx);
+
+  return true;
+}
 
 void
 AudioParent::ActorDestroy(ActorDestroyReason aWhy)
@@ -21,6 +39,10 @@ AudioParent::AudioParent()
 AudioParent::~AudioParent()
 {
   MOZ_COUNT_DTOR(AudioParent);
+
+  for (unsigned int i = 0; i < mCubebContexts.Length(); i++ ) {
+    cubeb_destroy(mCubebContexts[i]);
+  }
 }
 
 PAudioParent* CreateAudioParent()

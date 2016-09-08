@@ -10,8 +10,12 @@
 #include "mozilla/audio/PAudioChild.h"
 #include "mozilla/audio/PAudioParent.h"
 
+#include "cubeb/cubeb.h"
+
 namespace mozilla {
 namespace audio {
+
+int CubebInit(cubeb** aContext, char const* aContextName);
 
 class AudioChild : public PAudioChild
 {

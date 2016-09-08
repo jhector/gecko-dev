@@ -22,12 +22,14 @@ public:
   AudioParent();
   virtual ~AudioParent();
 
-  virtual bool RecvCubebInit(const nsCString& aName, int* aId) override;
+  virtual bool RecvCubebInit(const nsCString& aName, uint32_t* aId) override;
 
   virtual void ActorDestroy(ActorDestroyReason aWhy) override;
 
 protected:
-  nsTArray<cubeb*> mCubebContexts;
+  uint32_t mContextIdCounter;
+
+  nsDataHashtable<nsUint32HashKey, cubeb*> mCubebContexts;
 };
 
 PAudioParent* CreateAudioParent();

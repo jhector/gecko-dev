@@ -11,7 +11,7 @@ namespace mozilla {
 namespace audio {
 
 bool
-AudioParent::RecvCubebInit(const nsCString& aName, int* aId)
+AudioParent::RecvCubebInit(const nsCString& aName, uint32_t* aId)
 {
   cubeb* ctx;
 
@@ -20,8 +20,8 @@ AudioParent::RecvCubebInit(const nsCString& aName, int* aId)
     return false;
   }
 
-  *aId = mCubebContexts.Length();
-  mCubebContexts.AppendElement(ctx);
+  *aId = mContextIdCounter++;
+  mCubebContexts.Put(*aId, ctx);
 
   return true;
 }
@@ -32,6 +32,7 @@ AudioParent::ActorDestroy(ActorDestroyReason aWhy)
 }
 
 AudioParent::AudioParent()
+  : mContextIdCounter(1)
 {
   MOZ_COUNT_CTOR(AudioParent);
 }
@@ -40,8 +41,9 @@ AudioParent::~AudioParent()
 {
   MOZ_COUNT_DTOR(AudioParent);
 
-  for (unsigned int i = 0; i < mCubebContexts.Length(); i++ ) {
-    cubeb_destroy(mCubebContexts[i]);
+  for (auto iter = mCubebContexts.Iter(); !iter.Done(); iter.Next()) {
+    cubeb_destroy(iter.Data());
+    iter.Remove();
   }
 }
 

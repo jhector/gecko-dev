@@ -22,10 +22,10 @@ public:
   AudioParent();
   virtual ~AudioParent();
 
-  virtual bool RecvCubebInit(const nsCString& aName, uint32_t* aId) override;
-  virtual bool RecvCubebGetBackendId(const uint32_t& aCtxId,
+  virtual bool RecvInit(const nsCString& aName, uint32_t* aId) override;
+  virtual bool RecvGetBackendId(const uint32_t& aCtxId,
                                      nsCString* aName) override;
-  virtual bool RecvCubebDestroy(const uint32_t& aCtxId) override;
+  virtual bool RecvDestroy(const uint32_t& aCtxId) override;
 
   virtual void ActorDestroy(ActorDestroyReason aWhy) override;
 

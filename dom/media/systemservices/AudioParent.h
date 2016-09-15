@@ -24,7 +24,10 @@ public:
 
   virtual bool RecvInit(const nsCString& aName, uint32_t* aId) override;
   virtual bool RecvGetBackendId(const uint32_t& aCtxId,
-                                     nsCString* aName) override;
+                                nsCString* aName) override;
+  virtual bool RecvGetMaxChannelCount(const uint32_t& aCtxId,
+                                      uint32_t* aChannels,
+                                      int* aRet) override;
   virtual bool RecvDestroy(const uint32_t& aCtxId) override;
 
   virtual void ActorDestroy(ActorDestroyReason aWhy) override;

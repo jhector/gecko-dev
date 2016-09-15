@@ -36,7 +36,8 @@ Audio()
   return static_cast<AudioChild*>(sAudio);
 }
 
-int Init(cubeb** aContext, char const* aContextName)
+int
+Init(cubeb** aContext, char const* aContextName)
 {
   nsAutoCString name(aContextName);
 
@@ -53,7 +54,8 @@ int Init(cubeb** aContext, char const* aContextName)
   return CUBEB_OK;
 }
 
-const char* GetBackendId(cubeb* aContext)
+const char*
+GetBackendId(cubeb* aContext)
 {
   nsCString backend;
   if (!Audio()->SendGetBackendId(aContext->id, &backend)) {
@@ -63,7 +65,21 @@ const char* GetBackendId(cubeb* aContext)
   return ToNewCString(backend);
 }
 
-void Destroy(cubeb* aContext)
+int
+GetMaxChannelCount(cubeb* aContext, uint32_t* aMaxChannels)
+{
+  int ret = CUBEB_ERROR;
+
+  if (!Audio()->SendGetMaxChannelCount(aContext->id, aMaxChannels, &ret)) {
+    *aMaxChannels = 0;
+    return CUBEB_ERROR;
+  }
+
+  return ret;
+}
+
+void
+Destroy(cubeb* aContext)
 {
   if (aContext) {
     Audio()->SendDestroy(aContext->id);

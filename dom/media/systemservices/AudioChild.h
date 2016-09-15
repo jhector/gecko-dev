@@ -12,10 +12,20 @@
 
 #include "cubeb/cubeb.h"
 
+// The datatype |cubeb| is an opaque handle (see cubeb.h) of type struct cubeb.
+// On the child side the cubeb context is represented by an ID which
+// is used by the parent to access the real cubeb object.
+// Therefore struct cubeb is defined here as a simple int.
+struct cubeb {
+  uint32_t id;
+};
+
 namespace mozilla {
 namespace audio {
 
 int CubebInit(cubeb** aContext, char const* aContextName);
+const char* CubebGetBackendId(cubeb* aContext);
+void CubebDestroy(cubeb* aContext);
 
 class AudioChild : public PAudioChild
 {

@@ -26,13 +26,42 @@ AudioParent::RecvCubebInit(const nsCString& aName, uint32_t* aId)
   return true;
 }
 
+bool
+AudioParent::RecvCubebGetBackendId(const uint32_t& aCtxId, nsCString* aName)
+{
+  cubeb* ctx = mCubebContexts.Get(aCtxId);
+
+  if (ctx) {
+    const char* backend = cubeb_get_backend_id(ctx);
+    // TODO: better way to do this??
+    nsAutoCString name(backend);
+    *aName = name;
+    return true;
+  }
+
+  return false;
+}
+
+bool
+AudioParent::RecvCubebDestroy(const uint32_t& aCtxId)
+{
+  cubeb* ctx = mCubebContexts.Get(aCtxId);
+  if (ctx) {
+    cubeb_destroy(ctx);
+    mCubebContexts.Remove(aCtxId);
+    return true;
+  }
+
+  return false;
+}
+
 void
 AudioParent::ActorDestroy(ActorDestroyReason aWhy)
 {
 }
 
 AudioParent::AudioParent()
-  : mContextIdCounter(1)
+  : mContextIdCounter(0)
 {
   MOZ_COUNT_CTOR(AudioParent);
 }

@@ -38,17 +38,37 @@ Audio()
 
 int CubebInit(cubeb** aContext, char const* aContextName)
 {
-  uint32_t id;
   nsAutoCString name(aContextName);
 
-  if (!Audio()->SendCubebInit(name, &id)) {
+  // Object is allocated here and free()ed in CubebDestroy()
+  *aContext = (cubeb*)malloc(sizeof(cubeb));
+  if (*aContext == nullptr) {
     return CUBEB_ERROR;
   }
 
-  // cubeb context will be a pointer of the id value
- *aContext = reinterpret_cast<cubeb*>(id);
+  if (!Audio()->SendCubebInit(name, &((*aContext)->id))) {
+    return CUBEB_ERROR;
+  }
 
   return CUBEB_OK;
+}
+
+const char* CubebGetBackendId(cubeb* aContext)
+{
+  nsCString backend;
+  if (!Audio()->SendCubebGetBackendId(aContext->id, &backend)) {
+    return nullptr;
+  }
+
+  return ToNewCString(backend);
+}
+
+void CubebDestroy(cubeb* aContext)
+{
+  if (aContext) {
+    Audio()->SendCubebDestroy(aContext->id);
+    free(aContext);
+  }
 }
 
 AudioChild::AudioChild()

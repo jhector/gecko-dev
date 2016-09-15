@@ -23,6 +23,9 @@ public:
   virtual ~AudioParent();
 
   virtual bool RecvCubebInit(const nsCString& aName, uint32_t* aId) override;
+  virtual bool RecvCubebGetBackendId(const uint32_t& aCtxId,
+                                     nsCString* aName) override;
+  virtual bool RecvCubebDestroy(const uint32_t& aCtxId) override;
 
   virtual void ActorDestroy(ActorDestroyReason aWhy) override;
 

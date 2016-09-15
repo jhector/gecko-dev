@@ -13,6 +13,8 @@ sync protocol PAudio
 
 parent:
   sync CubebInit(nsCString name) returns (uint32_t id);
+  sync CubebGetBackendId(uint32_t id) returns (nsCString name);
+  sync CubebDestroy(uint32_t id);
 
   async __delete__();
 };

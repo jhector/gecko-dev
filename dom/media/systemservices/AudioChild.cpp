@@ -36,7 +36,7 @@ Audio()
   return static_cast<AudioChild*>(sAudio);
 }
 
-int CubebInit(cubeb** aContext, char const* aContextName)
+int Init(cubeb** aContext, char const* aContextName)
 {
   nsAutoCString name(aContextName);
 
@@ -46,27 +46,27 @@ int CubebInit(cubeb** aContext, char const* aContextName)
     return CUBEB_ERROR;
   }
 
-  if (!Audio()->SendCubebInit(name, &((*aContext)->id))) {
+  if (!Audio()->SendInit(name, &((*aContext)->id))) {
     return CUBEB_ERROR;
   }
 
   return CUBEB_OK;
 }
 
-const char* CubebGetBackendId(cubeb* aContext)
+const char* GetBackendId(cubeb* aContext)
 {
   nsCString backend;
-  if (!Audio()->SendCubebGetBackendId(aContext->id, &backend)) {
+  if (!Audio()->SendGetBackendId(aContext->id, &backend)) {
     return nullptr;
   }
 
   return ToNewCString(backend);
 }
 
-void CubebDestroy(cubeb* aContext)
+void Destroy(cubeb* aContext)
 {
   if (aContext) {
-    Audio()->SendCubebDestroy(aContext->id);
+    Audio()->SendDestroy(aContext->id);
     free(aContext);
   }
 }

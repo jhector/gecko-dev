@@ -23,9 +23,9 @@ struct cubeb {
 namespace mozilla {
 namespace audio {
 
-int CubebInit(cubeb** aContext, char const* aContextName);
-const char* CubebGetBackendId(cubeb* aContext);
-void CubebDestroy(cubeb* aContext);
+int Init(cubeb** aContext, char const* aContextName);
+const char* GetBackendId(cubeb* aContext);
+void Destroy(cubeb* aContext);
 
 class AudioChild : public PAudioChild
 {

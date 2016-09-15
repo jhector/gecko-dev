@@ -189,7 +189,7 @@ cubeb* GetCubebContextUnlocked()
 
   int rv = CUBEB_ERROR;
   if (XRE_GetProcessType() == GeckoProcessType_Content) {
-    rv = mozilla::audio::CubebInit(&sCubebContext, sBrandName);
+    rv = mozilla::audio::Init(&sCubebContext, sBrandName);
   } else {
     rv = cubeb_init(&sCubebContext, sBrandName);
   }
@@ -207,7 +207,7 @@ void ReportCubebBackendUsed()
 
   const char* backend;
   if (XRE_GetProcessType() == GeckoProcessType_Content) {
-    backend = mozilla::audio::CubebGetBackendId(sCubebContext);
+    backend = mozilla::audio::GetBackendId(sCubebContext);
   } else {
     backend = cubeb_get_backend_id(sCubebContext);
   }
@@ -270,7 +270,7 @@ void ShutdownLibrary()
   StaticMutexAutoLock lock(sMutex);
   if (sCubebContext) {
     if (XRE_GetProcessType() == GeckoProcessType_Content) {
-      mozilla::audio::CubebDestroy(sCubebContext);
+      mozilla::audio::Destroy(sCubebContext);
     } else {
       cubeb_destroy(sCubebContext);
     }
@@ -334,7 +334,7 @@ void GetCurrentBackend(nsAString& aBackend)
   if (cubebContext) {
     const char* backend;
     if (XRE_GetProcessType() == GeckoProcessType_Content) {
-      backend = mozilla::audio::CubebGetBackendId(cubebContext);
+      backend = mozilla::audio::GetBackendId(cubebContext);
     } else {
       backend = cubeb_get_backend_id(cubebContext);
     }

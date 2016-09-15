@@ -11,7 +11,7 @@ namespace mozilla {
 namespace audio {
 
 bool
-AudioParent::RecvCubebInit(const nsCString& aName, uint32_t* aId)
+AudioParent::RecvInit(const nsCString& aName, uint32_t* aId)
 {
   cubeb* ctx;
 
@@ -27,7 +27,7 @@ AudioParent::RecvCubebInit(const nsCString& aName, uint32_t* aId)
 }
 
 bool
-AudioParent::RecvCubebGetBackendId(const uint32_t& aCtxId, nsCString* aName)
+AudioParent::RecvGetBackendId(const uint32_t& aCtxId, nsCString* aName)
 {
   cubeb* ctx = mCubebContexts.Get(aCtxId);
 
@@ -43,7 +43,7 @@ AudioParent::RecvCubebGetBackendId(const uint32_t& aCtxId, nsCString* aName)
 }
 
 bool
-AudioParent::RecvCubebDestroy(const uint32_t& aCtxId)
+AudioParent::RecvDestroy(const uint32_t& aCtxId)
 {
   cubeb* ctx = mCubebContexts.Get(aCtxId);
   if (ctx) {

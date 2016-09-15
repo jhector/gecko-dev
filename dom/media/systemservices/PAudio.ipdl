@@ -12,9 +12,9 @@ sync protocol PAudio
   manager PBackground;
 
 parent:
-  sync CubebInit(nsCString name) returns (uint32_t id);
-  sync CubebGetBackendId(uint32_t id) returns (nsCString name);
-  sync CubebDestroy(uint32_t id);
+  sync Init(nsCString name) returns (uint32_t id);
+  sync GetBackendId(uint32_t id) returns (nsCString name);
+  sync Destroy(uint32_t id);
 
   async __delete__();
 };

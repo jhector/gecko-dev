@@ -43,6 +43,21 @@ AudioParent::RecvGetBackendId(const uint32_t& aCtxId, nsCString* aName)
 }
 
 bool
+AudioParent::RecvGetMaxChannelCount(const uint32_t& aCtxId,
+                                    uint32_t* aChannels,
+                                    int* aRet)
+{
+  cubeb* ctx = mCubebContexts.Get(aCtxId);
+
+  if (ctx) {
+    *aRet = cubeb_get_max_channel_count(ctx, aChannels);
+    return true;
+  }
+
+  return false;
+}
+
+bool
 AudioParent::RecvDestroy(const uint32_t& aCtxId)
 {
   cubeb* ctx = mCubebContexts.Get(aCtxId);

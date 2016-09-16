@@ -91,6 +91,22 @@ GetMaxChannelCount(cubeb* aContext, uint32_t* aMaxChannels)
   return cubeb_get_max_channel_count(aContext, aMaxChannels);
 }
 
+int
+GetPreferredSampleRate(cubeb* aContext, uint32_t* aRate)
+{
+  if (XRE_GetProcessType() == GeckoProcessType_Content) {
+    int ret = CUBEB_ERROR;
+    if (!Audio()->SendGetPreferredSampleRate(aContext->id, aRate, &ret)) {
+      *aRate = 0;
+      return CUBEB_ERROR;
+    }
+
+    return ret;
+  }
+
+  return cubeb_get_preferred_sample_rate(aContext, aRate);
+}
+
 void
 Destroy(cubeb* aContext)
 {

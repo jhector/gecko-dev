@@ -48,9 +48,22 @@ AudioParent::RecvGetMaxChannelCount(const uint32_t& aCtxId,
                                     int* aRet)
 {
   cubeb* ctx = mCubebContexts.Get(aCtxId);
-
   if (ctx) {
     *aRet = cubeb_get_max_channel_count(ctx, aChannels);
+    return true;
+  }
+
+  return false;
+}
+
+bool
+AudioParent::RecvGetPreferredSampleRate(const uint32_t& aCtxId,
+                                        uint32_t* aRate,
+                                        int* aRet)
+{
+  cubeb* ctx = mCubebContexts.Get(aCtxId);
+  if (ctx) {
+    *aRet = cubeb_get_preferred_sample_rate(ctx, aRate);
     return true;
   }
 

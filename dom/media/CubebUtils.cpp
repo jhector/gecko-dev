@@ -15,7 +15,7 @@
 #include "mozilla/Telemetry.h"
 #include "nsThreadUtils.h"
 #include "CubebUtils.h"
-#include "AudioChild.h"
+#include "Audio.h"
 #include "nsAutoRef.h"
 #include "prdtoa.h"
 
@@ -187,12 +187,7 @@ cubeb* GetCubebContextUnlocked()
       sBrandName, "Did not initialize sbrandName, and not on the main thread?");
   }
 
-  int rv = CUBEB_ERROR;
-  if (XRE_GetProcessType() == GeckoProcessType_Content) {
-    rv = mozilla::audio::Init(&sCubebContext, sBrandName);
-  } else {
-    rv = cubeb_init(&sCubebContext, sBrandName);
-  }
+  int rv = mozilla::audio::Init(&sCubebContext, sBrandName);
   NS_WARNING_ASSERTION(rv == CUBEB_OK, "Could not get a cubeb context.");
   sCubebState = (rv == CUBEB_OK) ? CubebState::Initialized : CubebState::Error;
 
@@ -205,12 +200,7 @@ void ReportCubebBackendUsed()
 
   sAudioStreamInitEverSucceeded = true;
 
-  const char* backend;
-  if (XRE_GetProcessType() == GeckoProcessType_Content) {
-    backend = mozilla::audio::GetBackendId(sCubebContext);
-  } else {
-    backend = cubeb_get_backend_id(sCubebContext);
-  }
+  const char* backend = mozilla::audio::GetBackendId(sCubebContext);
 
   bool foundBackend = false;
   for (uint32_t i = 0; i < ArrayLength(AUDIOSTREAM_BACKEND_ID_STR); i++) {
@@ -269,11 +259,7 @@ void ShutdownLibrary()
 
   StaticMutexAutoLock lock(sMutex);
   if (sCubebContext) {
-    if (XRE_GetProcessType() == GeckoProcessType_Content) {
-      mozilla::audio::Destroy(sCubebContext);
-    } else {
-      cubeb_destroy(sCubebContext);
-    }
+    mozilla::audio::Destroy(sCubebContext);
     sCubebContext = nullptr;
   }
   sBrandName = nullptr;
@@ -332,12 +318,7 @@ void GetCurrentBackend(nsAString& aBackend)
 {
   cubeb* cubebContext = GetCubebContext();
   if (cubebContext) {
-    const char* backend;
-    if (XRE_GetProcessType() == GeckoProcessType_Content) {
-      backend = mozilla::audio::GetBackendId(cubebContext);
-    } else {
-      backend = cubeb_get_backend_id(cubebContext);
-    }
+    const char* backend = mozilla::audio::GetBackendId(cubebContext);
 
     if (backend) {
       aBackend.AssignASCII(backend);

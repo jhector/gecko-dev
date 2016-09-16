@@ -6,6 +6,7 @@
 
 if CONFIG['MOZ_WEBRTC']:
     EXPORTS += [
+        'Audio.h',
         'AudioChild.h',
         'AudioParent.h',
         'CamerasChild.h',
@@ -15,6 +16,7 @@ if CONFIG['MOZ_WEBRTC']:
         'LoadMonitor.h',
     ]
     UNIFIED_SOURCES += [
+        'Audio.cpp',
         'AudioChild.cpp',
         'AudioParent.cpp',
         'CamerasChild.cpp',

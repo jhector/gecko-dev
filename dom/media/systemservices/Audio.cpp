@@ -92,6 +92,25 @@ GetMaxChannelCount(cubeb* aContext, uint32_t* aMaxChannels)
 }
 
 int
+GetMinLatency(cubeb* aContext,
+              cubeb_stream_params aParams,
+              uint32_t* aLatencyFrame)
+{
+  if (XRE_GetProcessType() == GeckoProcessType_Content) {
+    int ret = CUBEB_ERROR;
+    if (!Audio()->SendGetMinLatency(aContext->id,
+        aParams, aLatencyFrame, &ret)) {
+      *aLatencyFrame = 0;
+      return CUBEB_ERROR;
+    }
+
+    return ret;
+  }
+
+  return cubeb_get_min_latency(aContext, aParams, aLatencyFrame);
+}
+
+int
 GetPreferredSampleRate(cubeb* aContext, uint32_t* aRate)
 {
   if (XRE_GetProcessType() == GeckoProcessType_Content) {

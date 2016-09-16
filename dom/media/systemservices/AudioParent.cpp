@@ -57,6 +57,20 @@ AudioParent::RecvGetMaxChannelCount(const uint32_t& aCtxId,
 }
 
 bool
+AudioParent::RecvGetMinLatency(const uint32_t& aCtxId,
+                               const cubeb_stream_params& aParams,
+                               uint32_t* aLatencyFrame,
+                               int* aRet)
+{
+  cubeb* ctx = mCubebContexts.Get(aCtxId);
+  if (ctx) {
+    *aRet = cubeb_get_min_latency(ctx, aParams, aLatencyFrame);
+  }
+
+  return false;
+}
+
+bool
 AudioParent::RecvGetPreferredSampleRate(const uint32_t& aCtxId,
                                         uint32_t* aRate,
                                         int* aRet)

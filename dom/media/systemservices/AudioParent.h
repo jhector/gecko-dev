@@ -28,6 +28,10 @@ public:
   virtual bool RecvGetMaxChannelCount(const uint32_t& aCtxId,
                                       uint32_t* aChannels,
                                       int* aRet) override;
+  virtual bool RecvGetMinLatency(const uint32_t& aCtxId,
+                                 const cubeb_stream_params& aParams,
+                                 uint32_t* aLatencyFrame,
+                                 int* aRet) override;
   virtual bool RecvGetPreferredSampleRate(const uint32_t& aCtxId,
                                           uint32_t* aRate,
                                           int* aRet) override;

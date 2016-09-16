@@ -4,6 +4,8 @@
 
 include protocol PBackground;
 
+using cubeb_stream_params from "cubeb/cubeb.h";
+
 namespace mozilla {
 namespace audio {
 
@@ -15,6 +17,8 @@ parent:
   sync Init(nsCString name) returns (uint32_t id);
   sync GetBackendId(uint32_t id) returns (nsCString name);
   sync GetMaxChannelCount(uint32_t id) returns (uint32_t ch, int ret);
+  sync GetMinLatency(uint32_t id, cubeb_stream_params params)
+    returns (uint32_t lat, int ret);
   sync GetPreferredSampleRate(uint32_t id) returns (uint32_t rate, int ret);
   sync Destroy(uint32_t id);
 

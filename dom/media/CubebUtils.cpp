@@ -167,9 +167,8 @@ bool InitPreferredSampleRate()
   if (!context) {
     return false;
   }
-  if (cubeb_get_preferred_sample_rate(context,
-                                      &sPreferredSampleRate) != CUBEB_OK) {
-
+  if (mozilla::audio::GetPreferredSampleRate(context,
+        &sPreferredSampleRate) != CUBEB_OK) {
     return false;
   }
   MOZ_ASSERT(sPreferredSampleRate);
@@ -337,8 +336,8 @@ uint32_t MaxNumberOfChannels()
   cubeb* cubebContext = GetCubebContext();
   uint32_t maxNumberOfChannels;
   if (cubebContext &&
-      cubeb_get_max_channel_count(cubebContext,
-                                  &maxNumberOfChannels) == CUBEB_OK) {
+      mozilla::audio::GetMaxChannelCount(cubebContext,
+                                         &maxNumberOfChannels) == CUBEB_OK) {
     return maxNumberOfChannels;
   }
 

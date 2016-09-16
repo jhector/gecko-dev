@@ -5,87 +5,8 @@
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 #include "AudioChild.h"
 
-#include "mozilla/ipc/BackgroundChild.h"
-#include "mozilla/ipc/PBackgroundChild.h"
-
 namespace mozilla {
 namespace audio {
-
-static PAudioChild* sAudio;
-
-static AudioChild*
-Audio()
-{
-  if (!sAudio) {
-    // Try to get PBackground handle
-    ipc::PBackgroundChild* backgroundChild =
-      ipc::BackgroundChild::GetForCurrentThread();
-
-    // If it doesn't exist yet, wait for it
-    if (!backgroundChild) {
-      backgroundChild =
-        ipc::BackgroundChild::SynchronouslyCreateForCurrentThread();
-    }
-
-    // By now, we should have a PBackground
-    MOZ_RELEASE_ASSERT(backgroundChild);
-    sAudio = backgroundChild->SendPAudioConstructor();
-  }
-
-  MOZ_ASSERT(sAudio);
-  return static_cast<AudioChild*>(sAudio);
-}
-
-int
-Init(cubeb** aContext, char const* aContextName)
-{
-  nsAutoCString name(aContextName);
-
-  // Object is allocated here and free()ed in CubebDestroy()
-  *aContext = (cubeb*)malloc(sizeof(cubeb));
-  if (*aContext == nullptr) {
-    return CUBEB_ERROR;
-  }
-
-  if (!Audio()->SendInit(name, &((*aContext)->id))) {
-    return CUBEB_ERROR;
-  }
-
-  return CUBEB_OK;
-}
-
-const char*
-GetBackendId(cubeb* aContext)
-{
-  nsCString backend;
-  if (!Audio()->SendGetBackendId(aContext->id, &backend)) {
-    return nullptr;
-  }
-
-  return ToNewCString(backend);
-}
-
-int
-GetMaxChannelCount(cubeb* aContext, uint32_t* aMaxChannels)
-{
-  int ret = CUBEB_ERROR;
-
-  if (!Audio()->SendGetMaxChannelCount(aContext->id, aMaxChannels, &ret)) {
-    *aMaxChannels = 0;
-    return CUBEB_ERROR;
-  }
-
-  return ret;
-}
-
-void
-Destroy(cubeb* aContext)
-{
-  if (aContext) {
-    Audio()->SendDestroy(aContext->id);
-    free(aContext);
-  }
-}
 
 AudioChild::AudioChild()
 {

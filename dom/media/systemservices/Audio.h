@@ -15,11 +15,9 @@ namespace audio {
 int Init(cubeb** aContext, char const* aContextName);
 const char* GetBackendId(cubeb* aContext);
 int GetMaxChannelCount(cubeb* aContext, uint32_t* aMaxChannels);
-/*
 int GetMinLatency(cubeb* aContext,
                   cubeb_stream_params aParams,
                   uint32_t* aLatencyFrame);
-*/
 int GetPreferredSampleRate(cubeb* aContext, uint32_t* aRate);
 void Destroy(cubeb* aContext);
 

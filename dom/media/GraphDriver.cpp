@@ -9,6 +9,7 @@
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/Unused.h"
 #include "CubebUtils.h"
+#include "Audio.h"
 
 #ifdef MOZ_WEBRTC
 #include "webrtc/MediaEngineWebRTC.h"
@@ -625,7 +626,8 @@ AudioCallbackDriver::Init()
     output.format = CUBEB_SAMPLE_FLOAT32NE;
   }
 
-  if (cubeb_get_min_latency(cubebContext, output, &latency_frames) != CUBEB_OK) {
+  if (mozilla::audio::GetMinLatency(cubebContext, output,
+      &latency_frames) != CUBEB_OK) {
     NS_WARNING("Could not get minimal latency from cubeb.");
     return;
   }

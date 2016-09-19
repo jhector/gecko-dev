@@ -4,7 +4,7 @@
 
 include protocol PBackground;
 
-using cubeb_stream_params from "cubeb/cubeb.h";
+using cubeb_stream_params from "AudioMessageUtils.h";
 
 namespace mozilla {
 namespace audio {

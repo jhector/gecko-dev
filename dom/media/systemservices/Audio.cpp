@@ -10,6 +10,8 @@
 #include "mozilla/ipc/BackgroundChild.h"
 #include "mozilla/ipc/PBackgroundChild.h"
 
+#define AUDIO_REMOTE 0
+
 namespace mozilla {
 namespace audio {
 
@@ -41,6 +43,7 @@ Audio()
 int
 Init(cubeb** aContext, char const* aContextName)
 {
+#if AUDIO_REMOTE
   if (XRE_GetProcessType() == GeckoProcessType_Content) {
     nsAutoCString name(aContextName);
 
@@ -56,6 +59,7 @@ Init(cubeb** aContext, char const* aContextName)
 
     return CUBEB_OK;
   }
+#endif
 
   return cubeb_init(aContext, aContextName);
 }
@@ -63,6 +67,7 @@ Init(cubeb** aContext, char const* aContextName)
 const char*
 GetBackendId(cubeb* aContext)
 {
+#if AUDIO_REMOTE
   if (XRE_GetProcessType() == GeckoProcessType_Content) {
     nsCString backend;
     if (!Audio()->SendGetBackendId(aContext->id, &backend)) {
@@ -71,6 +76,7 @@ GetBackendId(cubeb* aContext)
 
     return ToNewCString(backend);
   }
+#endif
 
   return cubeb_get_backend_id(aContext);
 }
@@ -78,6 +84,7 @@ GetBackendId(cubeb* aContext)
 int
 GetMaxChannelCount(cubeb* aContext, uint32_t* aMaxChannels)
 {
+#if AUDIO_REMOTE
   if (XRE_GetProcessType() == GeckoProcessType_Content) {
     int ret = CUBEB_ERROR;
     if (!Audio()->SendGetMaxChannelCount(aContext->id, aMaxChannels, &ret)) {
@@ -87,6 +94,7 @@ GetMaxChannelCount(cubeb* aContext, uint32_t* aMaxChannels)
 
     return ret;
   }
+#endif
 
   return cubeb_get_max_channel_count(aContext, aMaxChannels);
 }
@@ -96,6 +104,7 @@ GetMinLatency(cubeb* aContext,
               cubeb_stream_params aParams,
               uint32_t* aLatencyFrame)
 {
+#if AUDIO_REMOTE
   if (XRE_GetProcessType() == GeckoProcessType_Content) {
     int ret = CUBEB_ERROR;
     if (!Audio()->SendGetMinLatency(aContext->id,
@@ -106,6 +115,7 @@ GetMinLatency(cubeb* aContext,
 
     return ret;
   }
+#endif
 
   return cubeb_get_min_latency(aContext, aParams, aLatencyFrame);
 }
@@ -113,6 +123,7 @@ GetMinLatency(cubeb* aContext,
 int
 GetPreferredSampleRate(cubeb* aContext, uint32_t* aRate)
 {
+#if AUDIO_REMOTE
   if (XRE_GetProcessType() == GeckoProcessType_Content) {
     int ret = CUBEB_ERROR;
     if (!Audio()->SendGetPreferredSampleRate(aContext->id, aRate, &ret)) {
@@ -122,6 +133,7 @@ GetPreferredSampleRate(cubeb* aContext, uint32_t* aRate)
 
     return ret;
   }
+#endif
 
   return cubeb_get_preferred_sample_rate(aContext, aRate);
 }
@@ -129,12 +141,14 @@ GetPreferredSampleRate(cubeb* aContext, uint32_t* aRate)
 void
 Destroy(cubeb* aContext)
 {
+#if AUDIO_REMOTE
   if (XRE_GetProcessType() == GeckoProcessType_Content) {
     Audio()->SendDestroy(aContext->id);
     free(aContext);
 
     return;
   }
+#endif
 
   cubeb_destroy(aContext);
 }

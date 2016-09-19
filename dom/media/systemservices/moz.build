@@ -8,6 +8,7 @@ if CONFIG['MOZ_WEBRTC']:
     EXPORTS += [
         'Audio.h',
         'AudioChild.h',
+        'AudioMessageUtils.h',
         'AudioParent.h',
         'CamerasChild.h',
         'CamerasParent.h',

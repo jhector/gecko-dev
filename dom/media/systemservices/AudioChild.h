@@ -20,6 +20,19 @@ struct cubeb {
   uint32_t id;
 };
 
+// The datatype |cubeb_stream| is an opaque handle (see cubeb.h) of
+// type struct cubeb_stream.
+// On the child side the struct contains an ID which identifies the correct
+// stream object on the parent side. It also contains the registered callbacks
+// so if a callback is invoked on the parent side, we know which to call on the
+// child side.
+struct cubeb_stream {
+  uint32_t id;
+  cubeb_data_callback data_callback;
+  cubeb_state_callback state_callback;
+  void* user_ptr;
+};
+
 namespace mozilla {
 namespace audio {
 
@@ -28,6 +41,21 @@ class AudioChild : public PAudioChild
 public:
   AudioChild();
   virtual ~AudioChild();
+
+  int StreamInit(cubeb* aContext,
+                 cubeb_stream** aStream,
+                 char const* aStreamName,
+                 cubeb_devid aInputDevice,
+                 cubeb_stream_params* aInputStreamParams,
+                 cubeb_devid aOutputDevice,
+                 cubeb_stream_params* aOutputStreamParams,
+                 int aLatencyFrames,
+                 cubeb_data_callback aDataCallback,
+                 cubeb_state_callback aStateCallback,
+                 void* aUserPtr);
+
+protected:
+  nsTArray<cubeb_stream*> mChildStreams;
 };
 
 PAudioChild* CreateAudioChild();

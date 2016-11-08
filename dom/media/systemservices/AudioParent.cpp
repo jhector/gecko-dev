@@ -97,6 +97,45 @@ AudioParent::RecvDestroy(const uint32_t& aCtxId)
   return false;
 }
 
+bool
+AudioParent::RecvStreamInit(const uint32_t& aCtxId,
+                            const nsCString& aName,
+                            const cubeb_stream_params& aInputParams,
+                            const cubeb_stream_params& aOutputParams,
+                            const int& aLatencyFrames,
+                            uint32_t* aId)
+{
+  cubeb* ctx = mCubebContexts.Get(aCtxId);
+  if (!ctx) {
+    return false;
+  }
+
+  cubeb_stream_params inputParams = aInputParams;
+  cubeb_stream_params outputParams = aOutputParams;
+
+  StreamInfo* stream = new StreamInfo();
+  int ret = cubeb_stream_init(ctx,
+                              &stream->stream,
+                              aName.get(),
+                              nullptr, // TODO: cubeb_devid opaque handle
+                              &inputParams,
+                              nullptr, // TODO: cubeb_devid opaque handle
+                              &outputParams,
+                              (unsigned int) aLatencyFrames,
+                              DataCallback_S,
+                              StateCallback_S,
+                              this);
+  if (ret != CUBEB_OK) {
+    return false;
+  }
+
+  *aId = mStreamIdCounter++;
+  stream->id = *aId;
+  mCubebStreams.Put(*aId, stream);
+
+  return true;
+}
+
 void
 AudioParent::ActorDestroy(ActorDestroyReason aWhy)
 {
@@ -104,6 +143,7 @@ AudioParent::ActorDestroy(ActorDestroyReason aWhy)
 
 AudioParent::AudioParent()
   : mContextIdCounter(0)
+  , mStreamIdCounter(0)
 {
   MOZ_COUNT_CTOR(AudioParent);
 }
@@ -116,6 +156,27 @@ AudioParent::~AudioParent()
     cubeb_destroy(iter.Data());
     iter.Remove();
   }
+
+  for (auto iter = mCubebStreams.Iter(); !iter.Done(); iter.Next()) {
+    cubeb_stream_stop(iter.Data()->stream);
+    cubeb_stream_destroy(iter.Data()->stream);
+    delete iter.Data();
+    iter.Remove();
+  }
+}
+
+long
+AudioParent::DataCallback(cubeb_stream *aStream, const void* aInputBuffer,
+                          void* aOutputBuffer, long aFrames)
+{
+  // XXX
+  return 0;
+}
+
+void
+AudioParent::StateCallback(cubeb_stream *aStream, cubeb_state aState)
+{
+  // XXX
 }
 
 PAudioParent* CreateAudioParent()

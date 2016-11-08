@@ -21,18 +21,18 @@ int GetMinLatency(cubeb* aContext,
 int GetPreferredSampleRate(cubeb* aContext, uint32_t* aRate);
 void Destroy(cubeb* aContext);
 
-/*
 int StreamInit(cubeb* aContext,
                cubeb_stream** aStream,
                char const* aStreamName,
-               cubeb_devid input_device,
+               cubeb_devid aInputDevice,
                cubeb_stream_params* aInputStreamParams,
-               cubeb_devid output_device,
+               cubeb_devid aOutputDevice,
                cubeb_stream_params* aOutputStreamParams,
                unsigned int aLatencyFrames,
                cubeb_data_callback aDataCallback,
                cubeb_state_callback aStateCallback,
                void* aUserPtr);
+/*
 void StreamDestroy(cubeb_stream* aStream);
 int StreamStart(cubeb_stream* aStream);
 int StreamStop(cubeb_stream* aStream);

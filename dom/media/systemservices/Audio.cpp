@@ -10,7 +10,7 @@
 #include "mozilla/ipc/BackgroundChild.h"
 #include "mozilla/ipc/PBackgroundChild.h"
 
-#define AUDIO_REMOTE 0
+#define AUDIO_REMOTE 1
 
 namespace mozilla {
 namespace audio {
@@ -48,7 +48,7 @@ Init(cubeb** aContext, char const* aContextName)
     nsAutoCString name(aContextName);
 
     // Object is allocated here and free()ed in CubebDestroy()
-    *aContext = (cubeb*)malloc(sizeof(cubeb));
+    *aContext = new cubeb();
     if (*aContext == nullptr) {
       return CUBEB_ERROR;
     }
@@ -144,13 +144,39 @@ Destroy(cubeb* aContext)
 #if AUDIO_REMOTE
   if (XRE_GetProcessType() == GeckoProcessType_Content) {
     Audio()->SendDestroy(aContext->id);
-    free(aContext);
+    delete aContext;
 
     return;
   }
 #endif
 
   cubeb_destroy(aContext);
+}
+
+int
+StreamInit(cubeb* aContext,
+           cubeb_stream** aStream,
+           char const* aStreamName,
+           cubeb_devid aInputDevice,
+           cubeb_stream_params* aInputStreamParams,
+           cubeb_devid aOutputDevice,
+           cubeb_stream_params* aOutputStreamParams,
+           unsigned int aLatencyFrames,
+           cubeb_data_callback aDataCallback,
+           cubeb_state_callback aStateCallback,
+           void* aUserPtr)
+{
+#if AUDIO_REMOTE
+  if (XRE_GetProcessType() == GeckoProcessType_Content) {
+    return Audio()->StreamInit(aContext, aStream, aStreamName, aInputDevice,
+      aInputStreamParams, aOutputDevice, aOutputStreamParams, aLatencyFrames,
+      aDataCallback, aStateCallback, aUserPtr);
+  }
+#endif
+
+  return cubeb_stream_init(aContext, aStream, aStreamName, aInputDevice,
+    aInputStreamParams, aOutputDevice, aOutputStreamParams, aLatencyFrames,
+    aDataCallback, aStateCallback, aUserPtr);
 }
 
 } // namespace audio

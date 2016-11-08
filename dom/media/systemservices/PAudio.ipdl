@@ -22,6 +22,14 @@ parent:
   sync GetPreferredSampleRate(uint32_t id) returns (uint32_t rate, int ret);
   sync Destroy(uint32_t id);
 
+  sync StreamInit(uint32_t ctx,
+                  nsCString name,
+                  cubeb_stream_params inputParams,
+                  cubeb_stream_params outputParams,
+                  /** TODO: Is there an "unsigned int" primitive? **/
+                  int latencyFrames)
+    returns (uint32_t id);
+
   async __delete__();
 };
 

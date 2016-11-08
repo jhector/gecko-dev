@@ -14,7 +14,10 @@
 namespace mozilla {
 namespace audio {
 
-class AudioParent;
+typedef struct stream_info {
+  uint32_t id;
+  cubeb_stream* stream;
+} StreamInfo;
 
 class AudioParent : public PAudioParent
 {
@@ -37,12 +40,40 @@ public:
                                           int* aRet) override;
   virtual bool RecvDestroy(const uint32_t& aCtxId) override;
 
+  virtual bool RecvStreamInit(const uint32_t& aCtxId,
+                              const nsCString& aName,
+                              const cubeb_stream_params& aInputParams,
+                              const cubeb_stream_params& aOutputParams,
+                              const int& aLatencyFrames,
+                              uint32_t *aId) override;
+
   virtual void ActorDestroy(ActorDestroyReason aWhy) override;
+
+private:
+  long DataCallback(cubeb_stream *aStream, const void* aInputBuffer,
+                    void* aOutputBuffer, long aFrames);
+  void StateCallback(cubeb_stream *aStream, cubeb_state aState);
+
+  // cubeb callbacks
+  static long DataCallback_S(cubeb_stream* aStream, void* aThis,
+                             const void* aInputBuffer, void* aOutputBuffer,
+                             long aFrames)
+  {
+    return static_cast<AudioParent*>(aThis)->DataCallback(aStream, aInputBuffer,
+      aOutputBuffer, aFrames);
+  }
+
+  static void StateCallback_S(cubeb_stream* aStream, void* aThis, cubeb_state aState)
+  {
+    static_cast<AudioParent*>(aThis)->StateCallback(aStream, aState);
+  }
 
 protected:
   uint32_t mContextIdCounter;
+  uint32_t mStreamIdCounter;
 
   nsDataHashtable<nsUint32HashKey, cubeb*> mCubebContexts;
+  nsDataHashtable<nsUint32HashKey, StreamInfo*> mCubebStreams;
 };
 
 PAudioParent* CreateAudioParent();

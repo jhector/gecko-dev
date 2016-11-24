@@ -7,12 +7,9 @@ include protocol PAudioContext;
 namespace mozilla {
 namespace audio {
 
-sync protocol PAudio
+protocol PAudioStream
 {
-  manages PAudioContext;
-
-parent:
-  sync PAudioContext(nsCString name);
+  manager PAudioContext;
 };
 
 } // namespace audio

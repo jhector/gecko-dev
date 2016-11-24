@@ -7,6 +7,8 @@
 #include "mozilla/AudioService.h"
 #include "mozilla/AudioServiceIPC.h"
 
+#include "mozilla/audio/PAudioContext.h"
+
 #include "mozilla/dom/ContentParent.h"
 
 #include "base/thread.h"
@@ -36,7 +38,15 @@ public:
 
   static AudioChild* Get() { return sInstance; }
 
+  MessageLoop* ServiceLoop() { return mAudioService->ServiceLoop(); }
+
 private:
+  virtual PAudioContextChild*
+  AllocPAudioContextChild(const nsCString &aName) override;
+
+  virtual bool
+  DeallocPAudioContextChild(PAudioContextChild* aActor) override;
+
   static Atomic<AudioChild*> sInstance;
 
   const RefPtr<AudioService> mAudioService;
@@ -56,11 +66,21 @@ public:
 
   void Open(Transport* aTransport, ProcessId aPid, MessageLoop* aIOLoop);
 
-  virtual ipc::IPCResult RecvHello() override;
-
   void ActorDestroy(ActorDestroyReason aWhy) override;
 
+  MessageLoop* ServiceLoop() { return mAudioService->ServiceLoop(); }
+
 private:
+  virtual PAudioContextParent*
+  AllocPAudioContextParent(const nsCString &aName) override;
+
+  virtual bool
+  DeallocPAudioContextParent(PAudioContextParent* aActor) override;
+
+  virtual mozilla::ipc::IPCResult
+  RecvPAudioContextConstructor(PAudioContextParent* aActor,
+                               const nsCString& aName) override;
+
   const RefPtr<AudioService> mAudioService;
 };
 
@@ -84,7 +104,8 @@ AudioChild::~AudioChild()
 void
 AudioChild::Open(Transport* aTransport, ProcessId aPid, MessageLoop* aIOLoop)
 {
-  // TODO: loop assertion
+  MOZ_RELEASE_ASSERT(MessageLoop::current() == ServiceLoop());
+
   MOZ_ASSERT(!sInstance);
   sInstance = this;
 
@@ -97,6 +118,19 @@ AudioChild::ActorDestroy(ActorDestroyReason aWhy)
 {
   // TODO: loop assertion
   // TODO: shutdown function
+}
+
+PAudioContextChild*
+AudioChild::AllocPAudioContextChild(const nsCString& aName)
+{
+  return new AudioContextChild();
+}
+
+bool
+AudioChild::DeallocPAudioContextChild(PAudioContextChild* aActor)
+{
+  delete aActor;
+  return true;
 }
 
 /* AudioParent implementation */
@@ -113,14 +147,34 @@ AudioParent::~AudioParent()
 void
 AudioParent::Open(Transport* aTransport, ProcessId aPid, MessageLoop* aIOLoop)
 {
-  // TODO: loop assertion
+  MOZ_RELEASE_ASSERT(MessageLoop::current() == ServiceLoop());
+
   DebugOnly<bool> ok = PAudioParent::Open(aTransport, aPid, aIOLoop);
   MOZ_ASSERT(ok);
 }
 
-mozilla::ipc::IPCResult
-AudioParent::RecvHello()
+PAudioContextParent*
+AudioParent::AllocPAudioContextParent(const nsCString& aName)
 {
+  return new AudioContextParent();
+}
+
+bool
+AudioParent::DeallocPAudioContextParent(PAudioContextParent* aActor)
+{
+  delete aActor;
+  return true;
+}
+
+mozilla::ipc::IPCResult
+AudioParent::RecvPAudioContextConstructor(PAudioContextParent* aActor,
+                                          const nsCString& aName)
+{
+  auto actor = static_cast<AudioContextParent*>(aActor);
+  if (!actor->Init(aName)) {
+    return IPC_FAIL_NO_REASON(actor);
+  }
+
   return IPC_OK();
 }
 
@@ -170,6 +224,12 @@ AudioService::GetOrCreate()
   return sInstance;
 }
 
+MessageLoop*
+AudioService::ServiceLoop()
+{
+  return mThread->message_loop();
+}
+
 /* static */ void
 AudioService::Start(dom::ContentParent* aContentParent)
 {
@@ -188,6 +248,14 @@ CreateAudioParent(mozilla::ipc::Transport* aTransport,
   AudioService* service = AudioService::GetOrCreate();
   auto* parent = new AudioParent(service);
 
+  service->ServiceLoop()->PostTask(NewNonOwningRunnableMethod
+                                   <mozilla::ipc::Transport*,
+                                    base::ProcessId,
+                                    MessageLoop*>(parent,
+                                                  &AudioParent::Open,
+                                                  aTransport, aOtherPid,
+                                                  XRE_GetIOMessageLoop()));
+
   return parent;
 }
 
@@ -199,6 +267,14 @@ CreateAudioChild(mozilla::ipc::Transport* aTransport,
 
   AudioService* service = AudioService::GetOrCreate();
   auto* child = new AudioChild(service);
+
+  service->ServiceLoop()->PostTask(NewNonOwningRunnableMethod
+                                   <mozilla::ipc::Transport*,
+                                    base::ProcessId,
+                                    MessageLoop*>(child,
+                                                  &AudioChild::Open,
+                                                  aTransport, aOtherPid,
+                                                  XRE_GetIOMessageLoop()));
 
   return child;
 }

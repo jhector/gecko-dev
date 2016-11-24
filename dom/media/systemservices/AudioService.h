@@ -9,6 +9,8 @@
 
 #include "nsISupportsImpl.h"
 
+class MessageLoop;
+
 namespace base {
 class Thread;
 } // namespace base
@@ -33,6 +35,8 @@ public:
   static AudioService* GetOrCreate();
 
   static void Start(dom::ContentParent* aContentParent);
+
+  MessageLoop* ServiceLoop();
 
 private:
   static AudioService* sInstance;

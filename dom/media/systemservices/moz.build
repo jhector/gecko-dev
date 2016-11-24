@@ -40,15 +40,18 @@ if CONFIG['OS_TARGET'] == 'Android':
 
 # TODO: Platform specific build??
 EXPORTS.mozilla += [
+    'AudioContext.h',
     'AudioService.h',
     'AudioServiceIPC.h',
 ]
 
 IPDL_SOURCES += [
     'PAudio.ipdl',
+    'PAudioContext.ipdl',
 ]
 
 UNIFIED_SOURCES += [
+    'AudioContext.cpp',
     'AudioService.cpp',
 ]
 

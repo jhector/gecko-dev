@@ -161,6 +161,10 @@ public:
   AllocPGMPServiceChild(mozilla::ipc::Transport* transport,
                         base::ProcessId otherProcess) override;
 
+  PAudioChild*
+  AllocPAudioChild(mozilla::ipc::Transport* transport,
+                   base::ProcessId otherProcess) override;
+
   mozilla::ipc::IPCResult
   RecvGMPsChanged(nsTArray<GMPCapabilityData>&& capabilities) override;
 

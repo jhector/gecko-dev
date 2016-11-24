@@ -38,6 +38,20 @@ if CONFIG['OS_TARGET'] == 'Android':
         'OpenSLESProvider.cpp',
     ]
 
+# TODO: Platform specific build??
+EXPORTS.mozilla += [
+    'AudioService.h',
+    'AudioServiceIPC.h',
+]
+
+IPDL_SOURCES += [
+    'PAudio.ipdl',
+]
+
+UNIFIED_SOURCES += [
+    'AudioService.cpp',
+]
+
 if CONFIG['MOZ_WIDGET_TOOLKIT'] == 'cocoa':
   UNIFIED_SOURCES += ['OSXRunLoopSingleton.cpp']
   EXPORTS += ['OSXRunLoopSingleton.h']

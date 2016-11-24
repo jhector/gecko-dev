@@ -20,6 +20,7 @@
 #include "mozilla/LookAndFeel.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/ProcessHangMonitorIPC.h"
+#include "mozilla/AudioServiceIPC.h"
 #include "mozilla/Unused.h"
 #include "mozilla/devtools/HeapSnapshotTempFileHelperChild.h"
 #include "mozilla/docshell/OfflineCacheUpdateChild.h"
@@ -1242,6 +1243,13 @@ ContentChild::AllocPProcessHangMonitorChild(Transport* aTransport,
                                             ProcessId aOtherProcess)
 {
   return CreateHangMonitorChild(aTransport, aOtherProcess);
+}
+
+mozilla::audio::PAudioChild*
+ContentChild::AllocPAudioChild(Transport* aTransport,
+                               ProcessId aOtherProcess)
+{
+  return audio::CreateAudioChild(aTransport, aOtherProcess);
 }
 
 #if defined(XP_MACOSX) && defined(MOZ_CONTENT_SANDBOX)

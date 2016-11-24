@@ -88,6 +88,7 @@
 #include "mozilla/Preferences.h"
 #include "mozilla/ProcessHangMonitor.h"
 #include "mozilla/ProcessHangMonitorIPC.h"
+#include "mozilla/AudioServiceIPC.h"
 #ifdef MOZ_ENABLE_PROFILER_SPS
 #include "mozilla/ProfileGatherer.h"
 #endif
@@ -2456,6 +2457,14 @@ ContentParent::AllocPProcessHangMonitorParent(Transport* aTransport,
 {
   mHangMonitorActor = CreateHangMonitorParent(this, aTransport, aOtherProcess);
   return mHangMonitorActor;
+}
+
+mozilla::audio::PAudioParent*
+ContentParent::AllocPAudioParent(Transport* aTransport,
+                                 ProcessId aOtherProcess)
+{
+  // TODO: possible actor saving
+  return audio::CreateAudioParent(aTransport, aOtherProcess);
 }
 
 mozilla::ipc::IPCResult

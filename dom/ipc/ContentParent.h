@@ -668,6 +668,9 @@ private:
   AllocPProcessHangMonitorParent(Transport* aTransport,
                                  ProcessId aOtherProcess) override;
 
+  PAudioParent*
+  AllocPAudioParent(Transport* aTransport, ProcessId aOtherProcess) override;
+
   virtual mozilla::ipc::IPCResult RecvGetProcessAttributes(ContentParentId* aCpId,
                                                            bool* aIsForBrowser) override;
 

@@ -14,6 +14,10 @@ class Thread;
 } // namespace base
 
 namespace mozilla {
+namespace dom {
+class ContentParent;
+} // namespace dom
+
 namespace audio {
 
 class AudioService
@@ -27,6 +31,8 @@ public:
 
   static AudioService* Get() { return sInstance; }
   static AudioService* GetOrCreate();
+
+  static void Start(dom::ContentParent* aContentParent);
 
 private:
   static AudioService* sInstance;

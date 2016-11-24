@@ -88,6 +88,7 @@
 #include "mozilla/Preferences.h"
 #include "mozilla/ProcessHangMonitor.h"
 #include "mozilla/ProcessHangMonitorIPC.h"
+#include "mozilla/AudioService.h"
 #include "mozilla/AudioServiceIPC.h"
 #ifdef MOZ_ENABLE_PROFILER_SPS
 #include "mozilla/ProfileGatherer.h"
@@ -1472,6 +1473,8 @@ ContentParent::ActorDestroy(ActorDestroyReason why)
     mHangMonitorActor = nullptr;
   }
 
+  // TODO: shutdown audio service
+
   if (why == NormalShutdown && !mCalledClose) {
     // If we shut down normally but haven't called Close, assume somebody
     // else called Close on us. In that case, we still need to call
@@ -1760,6 +1763,9 @@ ContentParent::LaunchSubprocess(ProcessPriority aInitialPriority /* = PROCESS_PR
   ContentProcessManager::GetSingleton()->AddContentProcess(this);
 
   ProcessHangMonitor::AddProcess(this);
+
+  // Spin up the audio service
+  audio::AudioService::Start(this);
 
   // Set a reply timeout for CPOWs.
   SetReplyTimeoutMs(Preferences::GetInt("dom.ipc.cpow.timeout", 0));

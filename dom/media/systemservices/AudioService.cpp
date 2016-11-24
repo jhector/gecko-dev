@@ -7,6 +7,8 @@
 #include "mozilla/AudioService.h"
 #include "mozilla/AudioServiceIPC.h"
 
+#include "mozilla/dom/ContentParent.h"
+
 #include "base/thread.h"
 
 namespace mozilla {
@@ -44,6 +46,7 @@ Atomic<AudioChild*> AudioChild::sInstance;
 
 /* Parent process objects */
 
+// TODO: make this class singleton? Only one instance needed on the parent side?
 class AudioParent
   : public PAudioParent
 {
@@ -165,6 +168,15 @@ AudioService::GetOrCreate()
   }
 
   return sInstance;
+}
+
+/* static */ void
+AudioService::Start(dom::ContentParent* aContentParent)
+{
+  MOZ_RELEASE_ASSERT(NS_IsMainThread());
+
+  DebugOnly<bool> opened = PAudio::Open(aContentParent);
+  MOZ_ASSERT(opened);
 }
 
 PAudioParent*

@@ -18,6 +18,8 @@
 namespace mozilla {
 namespace audio {
 
+// TODO: better opaque cubeb handling instead of reinterpret_cast maybe
+
 /*
  * Basic architecutre:
  * TODO: describe architecture

@@ -37,7 +37,7 @@ public:
   virtual void ActorDestroy(ActorDestroyReason aWhy) override;
 
 private:
-  cubeb* mContext;  
+  cubeb* mContext;
 
   // TODO: store instance of AudioParent??
 };

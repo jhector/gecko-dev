@@ -10,6 +10,7 @@
 #include "nsISupportsImpl.h"
 
 class MessageLoop;
+class cubeb;
 
 namespace base {
 class Thread;
@@ -34,9 +35,11 @@ public:
   static AudioService* Get() { return sInstance; }
   static AudioService* GetOrCreate();
 
-  static void Start(dom::ContentParent* aContentParent);
+  int InitializeContext(cubeb**, char const*);
 
   MessageLoop* ServiceLoop();
+
+  static void Start(dom::ContentParent*);
 
 private:
   static AudioService* sInstance;

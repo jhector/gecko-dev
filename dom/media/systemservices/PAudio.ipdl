@@ -12,7 +12,7 @@ sync protocol PAudio
   manages PAudioContext;
 
 parent:
-  sync PAudioContext(nsCString name);
+  sync PAudioContext(nsCString name) returns (int ret);
 };
 
 } // namespace audio

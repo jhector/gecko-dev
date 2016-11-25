@@ -29,10 +29,10 @@ class AudioContextParent
   : public PAudioContextParent
 {
 public:
-  AudioContextParent() {};
+  AudioContextParent();
   virtual ~AudioContextParent() {};
 
-  bool Init(const nsCString& aName);
+  int Initialize(const nsCString& aName);
 
   virtual void ActorDestroy(ActorDestroyReason aWhy) override;
 

@@ -1407,7 +1407,9 @@ ContentChild::RecvSetProcessSandbox(const MaybeFileDesc& aBroker)
   // Otherwise, sandboxing is best-effort.
   if (!SandboxInfo::Get().CanSandboxContent()) {
        sandboxEnabled = false;
-   } else {
+  }
+#if 0
+else {
        // This triggers the initialization of cubeb, which needs to happen
        // before seccomp is enabled (Bug 1259508). It also increases the startup
        // time of the content process, because cubeb is usually initialized
@@ -1415,6 +1417,7 @@ ContentChild::RecvSetProcessSandbox(const MaybeFileDesc& aBroker)
        // once Bug 1104619 (remoting audio) is resolved.
        Unused << CubebUtils::GetCubebContext();
   }
+#endif
 
 #endif /* MOZ_WIDGET_GONK && ANDROID_VERSION >= 19 */
   if (sandboxEnabled) {

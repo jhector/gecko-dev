@@ -17,15 +17,15 @@ AudioContextChild::ActorDestroy(ActorDestroyReason aWhy)
 }
 
 /* AudioContextParent implementation */
-
-bool
-AudioContextParent::Init(const nsCString& aName)
+AudioContextParent::AudioContextParent()
+  : mContext(nullptr)
 {
-  if (cubeb_init(&mContext, aName.get()) != CUBEB_OK) {
-    return false;
-  }
+}
 
-  return true;
+int
+AudioContextParent::Initialize(const nsCString& aName)
+{
+  return cubeb_init(&mContext, aName.get());
 }
 
 void

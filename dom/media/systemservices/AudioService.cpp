@@ -7,10 +7,12 @@
 #include "mozilla/AudioService.h"
 #include "mozilla/AudioServiceIPC.h"
 
+#include "mozilla/layers/SynchronousTask.h"
 #include "mozilla/audio/PAudioContext.h"
-
 #include "mozilla/dom/ContentParent.h"
+#include "mozilla/Unused.h"
 
+#include "cubeb/cubeb.h"
 #include "base/thread.h"
 
 namespace mozilla {
@@ -36,16 +38,22 @@ public:
 
   void ActorDestroy(ActorDestroyReason aWhy) override;
 
+  int InitializeContext(void**, char const*);
+
   static AudioChild* Get() { return sInstance; }
 
   MessageLoop* ServiceLoop() { return mAudioService->ServiceLoop(); }
 
 private:
   virtual PAudioContextChild*
-  AllocPAudioContextChild(const nsCString &aName) override;
+  AllocPAudioContextChild(const nsCString &aName, int *aRet) override;
 
   virtual bool
   DeallocPAudioContextChild(PAudioContextChild* aActor) override;
+
+  void
+  InitializeContextSync(layers::SynchronousTask* aTask, void** aContext,
+                                  char const* aName, int* aRet);
 
   static Atomic<AudioChild*> sInstance;
 
@@ -72,14 +80,14 @@ public:
 
 private:
   virtual PAudioContextParent*
-  AllocPAudioContextParent(const nsCString &aName) override;
+  AllocPAudioContextParent(const nsCString &aName, int *aRet) override;
 
   virtual bool
   DeallocPAudioContextParent(PAudioContextParent* aActor) override;
 
   virtual mozilla::ipc::IPCResult
   RecvPAudioContextConstructor(PAudioContextParent* aActor,
-                               const nsCString& aName) override;
+                               const nsCString& aName, int *aRet) override;
 
   const RefPtr<AudioService> mAudioService;
 };
@@ -120,8 +128,43 @@ AudioChild::ActorDestroy(ActorDestroyReason aWhy)
   // TODO: shutdown function
 }
 
+int
+AudioChild::InitializeContext(void** aContext, char const* aName)
+{
+  nsAutoCString name(aName);
+  int ret;
+
+  layers::SynchronousTask task("InitializeContext Lock");
+  ServiceLoop()->PostTask(NewNonOwningRunnableMethod
+                          <layers::SynchronousTask*,
+                           void**, char const*,
+                           int*>(this,
+                                 &AudioChild::InitializeContextSync,
+                                 &task, aContext, aName, &ret));
+
+  task.Wait();
+
+  return ret;
+}
+
+void
+AudioChild::InitializeContextSync(layers::SynchronousTask* aTask,
+                                  void** aContext, char const* aName, int* aRet)
+{
+  MOZ_RELEASE_ASSERT(MessageLoop::current() == ServiceLoop());
+
+  layers::AutoCompleteTask complete(aTask);
+  nsAutoCString name(aName);
+
+  *aContext = static_cast<void*>(SendPAudioContextConstructor(name, aRet));
+
+  if (*aRet != CUBEB_OK) {
+    *aContext = nullptr;
+  }
+}
+
 PAudioContextChild*
-AudioChild::AllocPAudioContextChild(const nsCString& aName)
+AudioChild::AllocPAudioContextChild(const nsCString& aName, int* aRet)
 {
   return new AudioContextChild();
 }
@@ -154,7 +197,7 @@ AudioParent::Open(Transport* aTransport, ProcessId aPid, MessageLoop* aIOLoop)
 }
 
 PAudioContextParent*
-AudioParent::AllocPAudioContextParent(const nsCString& aName)
+AudioParent::AllocPAudioContextParent(const nsCString& aName, int *aRet)
 {
   return new AudioContextParent();
 }
@@ -168,11 +211,15 @@ AudioParent::DeallocPAudioContextParent(PAudioContextParent* aActor)
 
 mozilla::ipc::IPCResult
 AudioParent::RecvPAudioContextConstructor(PAudioContextParent* aActor,
-                                          const nsCString& aName)
+                                          const nsCString& aName, int* aRet)
 {
   auto actor = static_cast<AudioContextParent*>(aActor);
-  if (!actor->Init(aName)) {
-    return IPC_FAIL_NO_REASON(actor);
+  *aRet = actor->Initialize(aName);
+
+  // In case of failure, we don't need the actor pair anymore,
+  // delete them in a clean fashion
+  if (*aRet != CUBEB_OK) {
+    Unused << AudioContextParent::Send__delete__(aActor);
   }
 
   return IPC_OK();
@@ -222,6 +269,13 @@ AudioService::GetOrCreate()
   }
 
   return sInstance;
+}
+
+int
+AudioService::InitializeContext(cubeb** aContext, char const* aName)
+{
+  return AudioChild::Get()->InitializeContext(
+    reinterpret_cast<void**>(aContext), aName);
 }
 
 MessageLoop*

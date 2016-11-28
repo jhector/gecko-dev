@@ -4,26 +4,15 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef mozilla_AudioContext_h
-#define mozilla_AudioContext_h
+#ifndef mozilla_AudioContextParent_h
+#define mozilla_AudioContextParent_h
 
-#include "mozilla/audio/PAudioContextChild.h"
 #include "mozilla/audio/PAudioContextParent.h"
 
-#include "cubeb/cubeb.h"
+class cubeb;
 
 namespace mozilla {
 namespace audio {
-
-class AudioContextChild
-  : public PAudioContextChild
-{
-public:
-  AudioContextChild() {};
-  virtual ~AudioContextChild() {};
-
-  virtual void ActorDestroy(ActorDestroyReason aWhy) override;
-};
 
 class AudioContextParent
   : public PAudioContextParent
@@ -45,4 +34,4 @@ private:
 } // namespace audio
 } // namespace mozilla
 
-#endif // mozilla_AudioContext_h
+#endif // mozilla_AudioContextParent_h

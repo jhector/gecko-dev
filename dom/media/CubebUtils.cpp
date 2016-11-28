@@ -19,7 +19,7 @@
 #include "nsAutoRef.h"
 #include "prdtoa.h"
 
-#include "mozilla/AudioService.h"
+#include "mozilla/audio/AudioService.h"
 
 #define PREF_VOLUME_SCALE "media.volume_scale"
 #define PREF_CUBEB_LATENCY_PLAYBACK "media.cubeb_latency_playback_ms"

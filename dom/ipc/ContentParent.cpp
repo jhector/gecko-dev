@@ -39,6 +39,8 @@
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/StyleSheetInlines.h"
 #include "mozilla/DataStorage.h"
+#include "mozilla/audio/AudioService.h"
+#include "mozilla/audio/AudioServiceIPC.h"
 #include "mozilla/devtools/HeapSnapshotTempFileHelperParent.h"
 #include "mozilla/docshell/OfflineCacheUpdateParent.h"
 #include "mozilla/dom/DataTransfer.h"
@@ -88,8 +90,6 @@
 #include "mozilla/Preferences.h"
 #include "mozilla/ProcessHangMonitor.h"
 #include "mozilla/ProcessHangMonitorIPC.h"
-#include "mozilla/AudioService.h"
-#include "mozilla/AudioServiceIPC.h"
 #ifdef MOZ_ENABLE_PROFILER_SPS
 #include "mozilla/ProfileGatherer.h"
 #endif

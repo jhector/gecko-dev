@@ -1,0 +1,112 @@
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set sw=2 ts=8 et ft=cpp : */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
+#include "mozilla/audio/AudioChild.h"
+
+#include "mozilla/audio/AudioContextChild.h"
+#include "mozilla/audio/AudioService.h"
+#include "mozilla/layers/SynchronousTask.h"
+#include "mozilla/Unused.h"
+
+#include "cubeb/cubeb.h"
+
+struct cubeb {
+  mozilla::audio::AudioContextChild* child;
+};
+
+namespace mozilla {
+namespace audio {
+
+AudioChild::AudioChild(AudioService* aAudioService)
+  : mAudioService(aAudioService)
+{
+}
+
+AudioChild::~AudioChild()
+{
+  MOZ_RELEASE_ASSERT(NS_IsMainThread());
+  MOZ_ASSERT(sInstance == this);
+
+  sInstance = nullptr;
+}
+
+void
+AudioChild::Open(Transport* aTransport, ProcessId aPid, MessageLoop* aIOLoop)
+{
+  MOZ_RELEASE_ASSERT(MessageLoop::current() == ServiceLoop());
+
+  MOZ_ASSERT(!sInstance);
+  sInstance = this;
+
+  DebugOnly<bool> ok = PAudioChild::Open(aTransport, aPid, aIOLoop);
+  MOZ_ASSERT(ok);
+}
+
+void
+AudioChild::ActorDestroy(ActorDestroyReason aWhy)
+{
+  // TODO: loop assertion
+  // TODO: shutdown function
+}
+
+int
+AudioChild::InitializeContext(cubeb** aContext, char const* aName)
+{
+  nsAutoCString name(aName);
+  int ret;
+
+  layers::SynchronousTask task("InitializeContext Lock");
+  ServiceLoop()->PostTask(NewNonOwningRunnableMethod
+                          <layers::SynchronousTask*,
+                           cubeb**, char const*,
+                           int*>(this,
+                                 &AudioChild::InitializeContextSync,
+                                 &task, aContext, aName, &ret));
+
+  task.Wait();
+
+  return ret;
+}
+
+MessageLoop*
+AudioChild::ServiceLoop()
+{
+  return mAudioService->ServiceLoop();
+}
+
+PAudioContextChild*
+AudioChild::AllocPAudioContextChild(const nsCString& aName, int* aRet)
+{
+  return new AudioContextChild();
+}
+
+bool
+AudioChild::DeallocPAudioContextChild(PAudioContextChild* aActor)
+{
+  delete aActor;
+  return true;
+}
+
+void
+AudioChild::InitializeContextSync(layers::SynchronousTask* aTask,
+                                  cubeb** aContext, char const* aName, int* aRet)
+{
+  MOZ_RELEASE_ASSERT(MessageLoop::current() == ServiceLoop());
+
+  layers::AutoCompleteTask complete(aTask);
+  nsAutoCString name(aName);
+
+  *aContext = new cubeb(); // TODO: need to make sure the memory is properly free()ed
+  (*aContext)->child = static_cast<AudioContextChild*>
+                         (SendPAudioContextConstructor(name, aRet));
+
+  if (*aRet != CUBEB_OK) {
+    delete *aContext;
+    *aContext = nullptr;
+  }
+}
+
+} // namespace audio
+} // namespace mozilla

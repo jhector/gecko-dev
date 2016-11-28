@@ -4,19 +4,13 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "mozilla/AudioContext.h"
+#include "mozilla/audio/AudioContextParent.h"
+
+#include "cubeb/cubeb.h"
 
 namespace mozilla {
 namespace audio {
 
-/* AudioContextChild implementation */
-void
-AudioContextChild::ActorDestroy(ActorDestroyReason aWhy)
-{
-// TODO: implement
-}
-
-/* AudioContextParent implementation */
 AudioContextParent::AudioContextParent()
   : mContext(nullptr)
 {

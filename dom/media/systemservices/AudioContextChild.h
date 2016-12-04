@@ -9,17 +9,47 @@
 
 #include "mozilla/audio/PAudioContextChild.h"
 
+#include "mozilla/audio/AudioChild.h"
+#include "mozilla/layers/SynchronousTask.h"
+#include "cubeb/cubeb.h"
+
+class MessageLoop;
+
 namespace mozilla {
 namespace audio {
+
+class AudioChild;
 
 class AudioContextChild
   : public PAudioContextChild
 {
 public:
-  AudioContextChild() {};
+  AudioContextChild(AudioChild* aAudioChild);
   virtual ~AudioContextChild() {};
 
+  int InitializeStream(cubeb* aContext,
+                       cubeb_stream** aStream,
+		       const char* aName,
+                       cubeb_data_callback data_callback,
+                       cubeb_state_callback state_callback,
+		       void* aUserPtr);
+
+  MessageLoop* ServiceLoop();
+
   virtual void ActorDestroy(ActorDestroyReason aWhy) override;
+
+private:
+  virtual PAudioStreamChild*
+  AllocPAudioStreamChild(const nsCString &aName, int *aRet) override;
+
+  virtual bool
+  DeallocPAudioStreamChild(PAudioStreamChild* aActor) override;
+
+  void
+  InitializeStreamSync(layers::SynchronousTask* aTask, cubeb_stream** aStream,
+                       char const* aName, int* aRet);
+
+ AudioChild* mAudioChild;
 };
 
 } // namespace audio

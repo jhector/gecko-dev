@@ -3,15 +3,18 @@
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 include protocol PAudio;
-// include protocol PAudioStream;
+include protocol PAudioStream;
 
 namespace mozilla {
 namespace audio {
 
-protocol PAudioContext
+sync protocol PAudioContext
 {
   manager PAudio;
-//  manages PAudioStream;
+  manages PAudioStream;
+
+parent:
+  sync PAudioStream(nsCString name) returns (int ret);
 
 child:
   async __delete__();

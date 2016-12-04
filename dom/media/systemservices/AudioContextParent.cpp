@@ -6,6 +6,7 @@
 
 #include "mozilla/audio/AudioContextParent.h"
 
+#include "mozilla/audio/AudioStreamParent.h"
 #include "cubeb/cubeb.h"
 
 namespace mozilla {
@@ -26,6 +27,37 @@ void
 AudioContextParent::ActorDestroy(ActorDestroyReason aWhy)
 {
 // TODO: implement
+}
+
+PAudioStreamParent*
+AudioContextParent::AllocPAudioStreamParent(const nsCString& aName, int *aRet)
+{
+  return new AudioStreamParent();
+}
+
+bool
+AudioContextParent::DeallocPAudioStreamParent(PAudioStreamParent* aActor)
+{
+  delete aActor;
+  return true;
+}
+
+mozilla::ipc::IPCResult
+AudioContextParent::RecvPAudioStreamConstructor(PAudioStreamParent* aActor,
+                                                const nsCString& aName, int* aRet)
+{
+  auto actor = static_cast<AudioStreamParent*>(aActor);
+  /*
+  *aRet = actor->Initialize(aName);
+
+  // In case of failure, we don't need the actor pair anymore,
+  // delete them in a clean fashion
+  if (*aRet != CUBEB_OK) {
+    Unused << AudioContextParent::Send__delete__(aActor);
+  }
+  */
+
+  return IPC_OK();
 }
 
 } // namespace audio

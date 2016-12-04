@@ -9,6 +9,8 @@
 
 #include "mozilla/audio/PAudioContextParent.h"
 
+#include "mozilla/audio/PAudioStreamParent.h"
+
 class cubeb;
 
 namespace mozilla {
@@ -26,6 +28,16 @@ public:
   virtual void ActorDestroy(ActorDestroyReason aWhy) override;
 
 private:
+  virtual PAudioStreamParent*
+  AllocPAudioStreamParent(const nsCString &aName, int *aRet) override;
+
+  virtual bool
+  DeallocPAudioStreamParent(PAudioStreamParent* aActor) override;
+
+  virtual mozilla::ipc::IPCResult
+  RecvPAudioStreamConstructor(PAudioStreamParent* aActor,
+                              const nsCString& aName, int *aRet) override;
+
   cubeb* mContext;
 
   // TODO: store instance of AudioParent??

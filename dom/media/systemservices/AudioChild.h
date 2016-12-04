@@ -5,14 +5,14 @@
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 #ifndef mozilla_AudioChild_h
 #define mozilla_AudioChild_h
+#include "mozilla/audio/PAudioChild.h"
 
 #include "mozilla/audio/AudioContextChild.h"
 #include "mozilla/audio/AudioService.h"
-#include "mozilla/audio/PAudioChild.h"
 #include "mozilla/layers/SynchronousTask.h"
+#include "cubeb/cubeb.h"
 
 class MessageLoop;
-class cubeb;
 
 namespace mozilla {
 namespace audio {
@@ -28,11 +28,12 @@ public:
 
   void ActorDestroy(ActorDestroyReason aWhy) override;
 
-  int InitializeContext(cubeb**, char const*);
-
   MessageLoop* ServiceLoop();
 
   static AudioChild* Get() { return sInstance; }
+
+  // Proxy functions for cubeb API
+  int InitializeContext(cubeb**, char const*);
 
 private:
   virtual PAudioContextChild*

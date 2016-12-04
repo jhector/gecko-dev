@@ -6,14 +6,16 @@
 #include "mozilla/audio/AudioChild.h"
 
 #include "mozilla/audio/AudioContextChild.h"
+#include "mozilla/audio/AudioStreamChild.h"
 #include "mozilla/audio/AudioService.h"
 #include "mozilla/layers/SynchronousTask.h"
-#include "mozilla/Unused.h"
-
-#include "cubeb/cubeb.h"
 
 struct cubeb {
-  mozilla::audio::AudioContextChild* child;
+  mozilla::audio::AudioContextChild* actor;
+};
+
+struct cubeb_stream {
+  mozilla::audio::AudioStreamChild* actor;
 };
 
 namespace mozilla {
@@ -79,7 +81,7 @@ AudioChild::ServiceLoop()
 PAudioContextChild*
 AudioChild::AllocPAudioContextChild(const nsCString& aName, int* aRet)
 {
-  return new AudioContextChild();
+  return new AudioContextChild(this);
 }
 
 bool
@@ -99,7 +101,7 @@ AudioChild::InitializeContextSync(layers::SynchronousTask* aTask,
   nsAutoCString name(aName);
 
   *aContext = new cubeb(); // TODO: need to make sure the memory is properly free()ed
-  (*aContext)->child = static_cast<AudioContextChild*>
+  (*aContext)->actor = static_cast<AudioContextChild*>
                          (SendPAudioContextConstructor(name, aRet));
 
   if (*aRet != CUBEB_OK) {

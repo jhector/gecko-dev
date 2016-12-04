@@ -32,8 +32,20 @@ AudioStreamParent::Initialize(char const* aName,
 {
   return cubeb_stream_init(mContextParent->GetContext(), &mStream, aName,
                            nullptr, nullptr, nullptr, nullptr, aLatencyFrames,
-                           nullptr, nullptr, this);
+                           DataCallback_S, StateCallback_S, this);
   // TODO: left off
+}
+
+long
+AudioStreamParent::DataCallback()
+{
+  return 0;
+}
+
+void
+AudioStreamParent::StateCallback()
+{
+
 }
 
 } // namespace audio

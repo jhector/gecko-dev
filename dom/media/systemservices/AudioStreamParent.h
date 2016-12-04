@@ -27,7 +27,23 @@ public:
 
   int Initialize(char const* aName, const int& aLatencyFrames);
 
+  long DataCallback();
+  void StateCallback();
+
 private:
+  // Static callbacks which will inform the child
+  static long
+  DataCallback_S(cubeb_stream * aStream, void* aUserPtr,
+                 void const* aInputBuffer, void* aOutputBuffer,
+                 long aNframes) {
+    return static_cast<AudioStreamParent*>(aUserPtr)->DataCallback();
+  }
+
+  static void
+  StateCallback_S(cubeb_stream* aStream, void* aUserPtr, cubeb_state aState) {
+    static_cast<AudioStreamParent*>(aUserPtr)->StateCallback();
+  }
+
   cubeb_stream* mStream;
   AudioContextParent* mContextParent;
 };

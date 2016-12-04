@@ -379,6 +379,7 @@ AudioStream::OpenCubeb(cubeb* aContext, cubeb_stream_params& aParams,
   if (audio::AudioChild::Get()->InitializeStream(aContext,
                                                  &stream,
                                                  "AudioStream",
+                                                 latency_frames,
                                                  DataCallback_S,
                                                  StateCallback_S,
                                                  this) == CUBEB_OK) {

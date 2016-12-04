@@ -84,6 +84,7 @@ int
 AudioChild::InitializeStream(cubeb* aContext,
                              cubeb_stream** aStream,
                              char const* aName,
+                             int aLatencyFrames,
                              cubeb_data_callback aDataCallback,
                              cubeb_state_callback aStateCallback,
                              void* aUserPtr)
@@ -91,6 +92,7 @@ AudioChild::InitializeStream(cubeb* aContext,
   return aContext->actor->InitializeStream(aContext,
                                            aStream,
                                            aName,
+                                           aLatencyFrames,
                                            aDataCallback,
                                            aStateCallback,
                                            aUserPtr);

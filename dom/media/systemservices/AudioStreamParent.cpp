@@ -6,10 +6,14 @@
 
 #include "mozilla/audio/AudioStreamParent.h"
 
+#include "mozilla/audio/AudioContextParent.h"
+
 namespace mozilla {
 namespace audio {
 
-AudioStreamParent::AudioStreamParent()
+AudioStreamParent::AudioStreamParent(AudioContextParent* aContextParent)
+  : mStream(nullptr),
+    mContextParent(aContextParent)
 {}
 
 AudioStreamParent::~AudioStreamParent()
@@ -20,6 +24,16 @@ AudioStreamParent::ActorDestroy(ActorDestroyReason aWhy)
 {
   // TODO: loop assertion
   // TODO: shutdown function
+}
+
+int
+AudioStreamParent::Initialize(char const* aName,
+                              const int& aLatencyFrames)
+{
+  return cubeb_stream_init(mContextParent->GetContext(), &mStream, aName,
+                           nullptr, nullptr, nullptr, nullptr, aLatencyFrames,
+                           nullptr, nullptr, this);
+  // TODO: left off
 }
 
 } // namespace audio

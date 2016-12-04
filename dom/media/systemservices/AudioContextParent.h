@@ -25,18 +25,24 @@ public:
 
   int Initialize(const nsCString& aName);
 
+  cubeb* GetContext() { return mContext; }
+
   virtual void ActorDestroy(ActorDestroyReason aWhy) override;
 
 private:
   virtual PAudioStreamParent*
-  AllocPAudioStreamParent(const nsCString &aName, int *aRet) override;
+  AllocPAudioStreamParent(const nsCString &aName,
+                          const int& aLatencyFrames,
+                          int *aRet) override;
 
   virtual bool
   DeallocPAudioStreamParent(PAudioStreamParent* aActor) override;
 
   virtual mozilla::ipc::IPCResult
   RecvPAudioStreamConstructor(PAudioStreamParent* aActor,
-                              const nsCString& aName, int *aRet) override;
+                              const nsCString& aName,
+                              const int& aLatencyFrames,
+                              int *aRet) override;
 
   cubeb* mContext;
 

@@ -9,18 +9,27 @@
 #include "mozilla/audio/PAudioStreamParent.h"
 
 #include "mozilla/audio/PAudioContext.h"
+#include "cubeb/cubeb.h"
 
 namespace mozilla {
 namespace audio {
+
+class AudioContextParent;
 
 class AudioStreamParent
   : public PAudioStreamParent
 {
 public:
-  AudioStreamParent();
+  AudioStreamParent(AudioContextParent* aContextParent);
   virtual ~AudioStreamParent();
 
   void ActorDestroy(ActorDestroyReason aWhy) override;
+
+  int Initialize(char const* aName, const int& aLatencyFrames);
+
+private:
+  cubeb_stream* mStream;
+  AudioContextParent* mContextParent;
 };
 
 } // namespace audio

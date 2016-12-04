@@ -30,6 +30,7 @@ public:
   int InitializeStream(cubeb* aContext,
                        cubeb_stream** aStream,
                        char const* aName,
+                       const int& aLatencyFrames,
                        cubeb_data_callback data_callback,
                        cubeb_state_callback state_callback,
                        void* aUserPtr);
@@ -40,14 +41,19 @@ public:
 
 private:
   virtual PAudioStreamChild*
-  AllocPAudioStreamChild(const nsCString &aName, int *aRet) override;
+  AllocPAudioStreamChild(const nsCString &aName,
+                         const int& aLatencyFrames,
+                         int *aRet) override;
 
   virtual bool
   DeallocPAudioStreamChild(PAudioStreamChild* aActor) override;
 
   void
-  InitializeStreamSync(layers::SynchronousTask* aTask, cubeb_stream** aStream,
-                       char const* aName, int* aRet);
+  InitializeStreamSync(layers::SynchronousTask* aTask,
+                       cubeb_stream** aStream,
+                       char const* aName,
+                       const int& aLatencyFrames,
+                       int* aRet);
 
  AudioChild* mAudioChild;
 };

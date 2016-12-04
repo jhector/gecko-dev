@@ -14,7 +14,7 @@ sync protocol PAudioContext
   manages PAudioStream;
 
 parent:
-  sync PAudioStream(nsCString name) returns (int ret);
+  sync PAudioStream(nsCString name, int latency) returns (int ret);
 
 child:
   async __delete__();

@@ -20,6 +20,7 @@ int
 AudioContextChild::InitializeStream(cubeb* aContext,
                                     cubeb_stream** aStream,
                                     char const* aName,
+                                    const int& aLatencyFrames,
                                     cubeb_data_callback aDataCallback,
                                     cubeb_state_callback aStateCallback,
                                     void* aUserPtr)
@@ -30,10 +31,10 @@ AudioContextChild::InitializeStream(cubeb* aContext,
   layers::SynchronousTask task("InitializeStream Lock");
   ServiceLoop()->PostTask(NewNonOwningRunnableMethod
                           <layers::SynchronousTask*,
-                           cubeb_stream**, char const*,
+                           cubeb_stream**, char const*, const int&,
                            int*>(this,
                                  &AudioContextChild::InitializeStreamSync,
-                                 &task, aStream, aName, &ret));
+                                 &task, aStream, aName, aLatencyFrames, &ret));
 
   task.Wait();
 
@@ -60,7 +61,8 @@ AudioContextChild::ActorDestroy(ActorDestroyReason aWhy)
 }
 
 PAudioStreamChild*
-AudioContextChild::AllocPAudioStreamChild(const nsCString& aName, int* aRet)
+AudioContextChild::AllocPAudioStreamChild(const nsCString& aName,
+                                          const int& aLatencyFrames, int* aRet)
 {
   return new AudioStreamChild(this);
 }
@@ -75,7 +77,9 @@ AudioContextChild::DeallocPAudioStreamChild(PAudioStreamChild* aActor)
 void
 AudioContextChild::InitializeStreamSync(layers::SynchronousTask* aTask,
                                         cubeb_stream** aStream,
-                                        char const* aName, int* aRet)
+                                        char const* aName,
+                                        const int& aLatencyFrames,
+                                        int* aRet)
 {
   MOZ_RELEASE_ASSERT(MessageLoop::current() == ServiceLoop());
 
@@ -84,7 +88,9 @@ AudioContextChild::InitializeStreamSync(layers::SynchronousTask* aTask,
 
   *aStream = new cubeb_stream(); // TODO: need to make sure the memory is properly free()ed, RefPtr?
   (*aStream)->actor = static_cast<AudioStreamChild*>
-                         (SendPAudioStreamConstructor(name, aRet));
+                         (SendPAudioStreamConstructor(name,
+                                                      aLatencyFrames,
+                                                      aRet));
 
   if (*aRet != CUBEB_OK) {
     delete *aStream;

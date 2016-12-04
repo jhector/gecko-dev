@@ -29,10 +29,10 @@ public:
 
   int InitializeStream(cubeb* aContext,
                        cubeb_stream** aStream,
-		       const char* aName,
+                       char const* aName,
                        cubeb_data_callback data_callback,
                        cubeb_state_callback state_callback,
-		       void* aUserPtr);
+                       void* aUserPtr);
 
   MessageLoop* ServiceLoop();
 

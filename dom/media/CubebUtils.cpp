@@ -19,7 +19,7 @@
 #include "nsAutoRef.h"
 #include "prdtoa.h"
 
-#include "mozilla/audio/AudioService.h"
+#include "mozilla/audio/AudioChild.h"
 
 #define PREF_VOLUME_SCALE "media.volume_scale"
 #define PREF_CUBEB_LATENCY_PLAYBACK "media.cubeb_latency_playback_ms"
@@ -228,10 +228,11 @@ cubeb* GetCubebContextUnlocked()
       sBrandName, "Did not initialize sbrandName, and not on the main thread?");
   }
 
+// TODO: proper child process check
 #if 0
   int rv = cubeb_init(&sCubebContext, sBrandName);
 #else
-  int rv = audio::AudioService::Get()->InitializeContext(&sCubebContext, sBrandName);
+  int rv = audio::AudioChild::Get()->InitializeContext(&sCubebContext, sBrandName);
 #endif
   NS_WARNING_ASSERTION(rv == CUBEB_OK, "Could not get a cubeb context.");
   sCubebState = (rv == CUBEB_OK) ? CubebState::Initialized : CubebState::Uninitialized;

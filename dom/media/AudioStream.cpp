@@ -20,6 +20,8 @@
 #include "gfxPrefs.h"
 #include "AudioConverter.h"
 
+#include "mozilla/audio/AudioChild.h"
+
 namespace mozilla {
 
 #undef LOG
@@ -367,10 +369,20 @@ AudioStream::OpenCubeb(cubeb* aContext, cubeb_stream_params& aParams,
   /* Convert from milliseconds to frames. */
   uint32_t latency_frames =
     CubebUtils::GetCubebPlaybackLatencyInMilliseconds() * aParams.rate / 1000;
+// TODO: proper child process check
+#if 0
   if (cubeb_stream_init(aContext, &stream, "AudioStream",
                         nullptr, nullptr, nullptr, &aParams,
                         latency_frames,
                         DataCallback_S, StateCallback_S, this) == CUBEB_OK) {
+#else
+  if (audio::AudioChild::Get()->InitializeStream(aContext,
+                                                 &stream,
+                                                 "AudioStream",
+                                                 DataCallback_S,
+                                                 StateCallback_S,
+                                                 this) == CUBEB_OK) {
+#endif
     mCubebStream.reset(stream);
     CubebUtils::ReportCubebBackendUsed();
   } else {

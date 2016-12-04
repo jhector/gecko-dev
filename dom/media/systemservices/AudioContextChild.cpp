@@ -19,7 +19,7 @@ AudioContextChild::AudioContextChild(AudioChild* aAudioChild)
 int
 AudioContextChild::InitializeStream(cubeb* aContext,
                                     cubeb_stream** aStream,
-				    const char* aName,
+                                    char const* aName,
                                     cubeb_data_callback aDataCallback,
                                     cubeb_state_callback aStateCallback,
                                     void* aUserPtr)

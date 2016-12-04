@@ -34,6 +34,12 @@ public:
 
   // Proxy functions for cubeb API
   int InitializeContext(cubeb**, char const*);
+  int InitializeStream(cubeb*,
+                       cubeb_stream**,
+                       char const*,
+                       cubeb_data_callback,
+                       cubeb_state_callback,
+                       void*);
 
 private:
   virtual PAudioContextChild*
@@ -49,8 +55,6 @@ private:
   static Atomic<AudioChild*> sInstance;
   const RefPtr<AudioService> mAudioService;
 };
-
-Atomic<AudioChild*> AudioChild::sInstance;
 
 } // namespace audio
 } // namespace mozilla

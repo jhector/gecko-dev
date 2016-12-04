@@ -63,12 +63,6 @@ AudioService::GetOrCreate()
   return sInstance;
 }
 
-int
-AudioService::InitializeContext(cubeb** aContext, char const* aName)
-{
-  return AudioChild::Get()->InitializeContext(aContext, aName);
-}
-
 MessageLoop*
 AudioService::ServiceLoop()
 {

@@ -21,6 +21,8 @@ struct cubeb_stream {
 namespace mozilla {
 namespace audio {
 
+Atomic<AudioChild*> AudioChild::sInstance;
+
 AudioChild::AudioChild(AudioService* aAudioService)
   : mAudioService(aAudioService)
 {
@@ -53,6 +55,12 @@ AudioChild::ActorDestroy(ActorDestroyReason aWhy)
   // TODO: shutdown function
 }
 
+MessageLoop*
+AudioChild::ServiceLoop()
+{
+  return mAudioService->ServiceLoop();
+}
+
 int
 AudioChild::InitializeContext(cubeb** aContext, char const* aName)
 {
@@ -72,10 +80,20 @@ AudioChild::InitializeContext(cubeb** aContext, char const* aName)
   return ret;
 }
 
-MessageLoop*
-AudioChild::ServiceLoop()
+int
+AudioChild::InitializeStream(cubeb* aContext,
+                             cubeb_stream** aStream,
+                             char const* aName,
+                             cubeb_data_callback aDataCallback,
+                             cubeb_state_callback aStateCallback,
+                             void* aUserPtr)
 {
-  return mAudioService->ServiceLoop();
+  return aContext->actor->InitializeStream(aContext,
+                                           aStream,
+                                           aName,
+                                           aDataCallback,
+                                           aStateCallback,
+                                           aUserPtr);
 }
 
 PAudioContextChild*

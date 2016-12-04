@@ -35,8 +35,6 @@ public:
   static AudioService* Get() { return sInstance; }
   static AudioService* GetOrCreate();
 
-  int InitializeContext(cubeb**, char const*);
-
   MessageLoop* ServiceLoop();
 
   static void Start(dom::ContentParent*);

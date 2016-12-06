@@ -5,6 +5,8 @@
 include protocol PAudio;
 include protocol PAudioStream;
 
+using cubeb_stream_params from "mozilla/audio/AudioServiceIPCUtils.h";
+
 namespace mozilla {
 namespace audio {
 

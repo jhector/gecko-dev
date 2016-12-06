@@ -27,7 +27,7 @@ public:
 
   void Initialize(cubeb_data_callback aDataCallback,
                   cubeb_state_callback aStateCallback,
-		  void* aUserPtr);
+                  void* aUserPtr);
 
   MessageLoop* ServiceLoop();
 

@@ -46,6 +46,7 @@ EXPORTS.mozilla.audio += [
     'AudioParent.h',
     'AudioService.h',
     'AudioServiceIPC.h',
+    'AudioServiceIPCUtils.h',
     'AudioStreamChild.h',
     'AudioStreamParent.h',
 ]

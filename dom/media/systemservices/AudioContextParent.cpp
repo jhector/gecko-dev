@@ -69,5 +69,20 @@ AudioContextParent::RecvPAudioStreamConstructor(PAudioStreamParent* aActor,
   return IPC_OK();
 }
 
+mozilla::ipc::IPCResult
+AudioContextParent::RecvGetBackendId(nsCString* aRet)
+{
+  if (!mContext) {
+    return IPC_OK(); // TODO: failure here?
+  }
+
+  const char* backend = cubeb_get_backend_id(mContext);
+  // TODO: better way to do this??
+  nsAutoCString name(backend);
+  *aRet = name;
+
+  return IPC_OK();
+}
+
 } // namespace audio
 } // namespace mozilla

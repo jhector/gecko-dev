@@ -615,7 +615,12 @@ AudioStream::DataCallback(void* aBuffer, long aFrames)
   auto writer = AudioBufferWriter(
     reinterpret_cast<AudioDataValue*>(aBuffer), mOutChannels, aFrames);
 
+// TODO: proper child process check
+#if 0
   if (!strcmp(cubeb_get_backend_id(CubebUtils::GetCubebContext()), "winmm")) {
+#else
+  if (!strcmp(audio::AudioChild::Get()->GetBackendId(CubebUtils::GetCubebContext()), "winmm")) {
+#endif
     // Don't consume audio data until Start() is called.
     // Expected only with cubeb winmm backend.
     if (mState == INITIALIZED) {

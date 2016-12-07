@@ -80,6 +80,13 @@ AudioChild::InitializeContext(cubeb** aContext, char const* aName)
   return ret;
 }
 
+char const*
+AudioChild::GetBackendId(cubeb* aContext)
+{
+  // TODO: pointer check?
+  return aContext->actor->GetBackendId();
+}
+
 int
 AudioChild::InitializeStream(cubeb* aContext,
                              cubeb_stream** aStream,
@@ -91,6 +98,7 @@ AudioChild::InitializeStream(cubeb* aContext,
                              cubeb_state_callback aStateCallback,
                              void* aUserPtr)
 {
+  // TODO: pointer check?
   return aContext->actor->InitializeStream(aContext,
                                            aStream,
                                            aName,

@@ -33,11 +33,15 @@ AudioStreamParent::Initialize(char const* aName,
                               const int& aLatencyFrames)
 {
   // TODO: better way to do this??
+#if 1
   cubeb_stream_params inputParams = aInputParams;
   cubeb_stream_params outputParams = aOutputParams;
+#endif
 
   return cubeb_stream_init(mContextParent->GetContext(), &mStream, aName,
-                           nullptr, &inputParams, nullptr, &outputParams, aLatencyFrames,
+                           nullptr, inputParams.rate ? &inputParams : nullptr, // TODO: ugly check, do it better?
+                           nullptr, outputParams.rate ? &outputParams : nullptr,
+                           aLatencyFrames,
                            DataCallback_S, StateCallback_S, this);
   // TODO: left off
 }

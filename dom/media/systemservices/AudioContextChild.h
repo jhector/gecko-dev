@@ -37,6 +37,8 @@ public:
                        cubeb_state_callback state_callback,
                        void* aUserPtr);
 
+  char const* GetBackendId();
+
   MessageLoop* ServiceLoop();
 
   virtual void ActorDestroy(ActorDestroyReason aWhy) override;
@@ -60,6 +62,8 @@ private:
                        cubeb_stream_params* aOutputStreamParams,
                        const int& aLatencyFrames,
                        int* aRet);
+
+ void GetBackendIdSync(layers::SynchronousTask* aTask, nsCString* aBackend);
 
  AudioChild* mAudioChild;
 };

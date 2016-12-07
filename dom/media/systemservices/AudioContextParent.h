@@ -47,6 +47,9 @@ private:
                               const int& aLatencyFrames,
                               int *aRet) override;
 
+  virtual mozilla::ipc::IPCResult
+  RecvGetBackendId(nsCString *aRet) override;
+
   cubeb* mContext;
 
   // TODO: store instance of AudioParent??

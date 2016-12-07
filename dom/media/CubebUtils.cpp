@@ -254,7 +254,13 @@ void ReportCubebBackendUsed()
 
   bool foundBackend = false;
   for (uint32_t i = 0; i < ArrayLength(AUDIOSTREAM_BACKEND_ID_STR); i++) {
+  // TODO: proper child process check
+#if 0
     if (!strcmp(cubeb_get_backend_id(sCubebContext), AUDIOSTREAM_BACKEND_ID_STR[i])) {
+#else
+    if (!strcmp(audio::AudioChild::Get()->GetBackendId(sCubebContext),
+                AUDIOSTREAM_BACKEND_ID_STR[i])) {
+#endif
       Telemetry::Accumulate(Telemetry::AUDIOSTREAM_BACKEND_USED, i);
       foundBackend = true;
     }
@@ -380,7 +386,12 @@ void GetCurrentBackend(nsAString& aBackend)
 {
   cubeb* cubebContext = GetCubebContext();
   if (cubebContext) {
+  // TODO: proper child process check
+#if 0
     const char* backend = cubeb_get_backend_id(cubebContext);
+#else
+    const char* backend = audio::AudioChild::Get()->GetBackendId(cubebContext);
+#endif
     if (backend) {
       aBackend.AssignASCII(backend);
       return;

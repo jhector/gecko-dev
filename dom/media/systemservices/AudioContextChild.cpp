@@ -7,6 +7,7 @@
 #include "mozilla/audio/AudioContextChild.h"
 
 #include "mozilla/audio/AudioStreamChild.h"
+#include "mozilla/Unused.h"
 
 namespace mozilla {
 namespace audio {
@@ -51,6 +52,33 @@ AudioContextChild::InitializeStream(cubeb* aContext,
   }
 
   return ret;
+}
+
+char const*
+AudioContextChild::GetBackendId()
+{
+  nsCString backend;
+
+  layers::SynchronousTask task("GetBackendId Lock");
+  ServiceLoop()->PostTask(NewNonOwningRunnableMethod
+                          <layers::SynchronousTask*,
+                           nsCString*>(this,
+                                 &AudioContextChild::GetBackendIdSync,
+                                 &task, &backend));
+
+  task.Wait();
+
+  return ToNewCString(backend);
+}
+
+void
+AudioContextChild::GetBackendIdSync(layers::SynchronousTask* aTask,
+                                    nsCString* aBackend)
+{
+  MOZ_RELEASE_ASSERT(MessageLoop::current() == ServiceLoop());
+
+  layers::AutoCompleteTask complete(aTask);
+  Unused << SendGetBackendId(aBackend);
 }
 
 MessageLoop*

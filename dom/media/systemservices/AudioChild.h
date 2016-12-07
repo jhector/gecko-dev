@@ -34,6 +34,8 @@ public:
 
   // Proxy functions for cubeb API
   int InitializeContext(cubeb**, char const*);
+  char const* GetBackendId(cubeb*);
+
   int InitializeStream(cubeb*,
                        cubeb_stream**,
                        char const*,

@@ -28,10 +28,16 @@ AudioStreamParent::ActorDestroy(ActorDestroyReason aWhy)
 
 int
 AudioStreamParent::Initialize(char const* aName,
+                              const cubeb_stream_params& aInputParams,
+                              const cubeb_stream_params& aOutputParams,
                               const int& aLatencyFrames)
 {
+  // TODO: better way to do this??
+  cubeb_stream_params inputParams = aInputParams;
+  cubeb_stream_params outputParams = aOutputParams;
+
   return cubeb_stream_init(mContextParent->GetContext(), &mStream, aName,
-                           nullptr, nullptr, nullptr, nullptr, aLatencyFrames,
+                           nullptr, &inputParams, nullptr, &outputParams, aLatencyFrames,
                            DataCallback_S, StateCallback_S, this);
   // TODO: left off
 }

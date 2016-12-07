@@ -37,6 +37,8 @@ public:
   int InitializeStream(cubeb*,
                        cubeb_stream**,
                        char const*,
+                       cubeb_stream_params*,
+                       cubeb_stream_params*,
                        int,
                        cubeb_data_callback,
                        cubeb_state_callback,

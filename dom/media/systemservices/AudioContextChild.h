@@ -30,6 +30,8 @@ public:
   int InitializeStream(cubeb* aContext,
                        cubeb_stream** aStream,
                        char const* aName,
+                       cubeb_stream_params* aInputStreamParams,
+                       cubeb_stream_params* aOutputStreamParams,
                        const int& aLatencyFrames,
                        cubeb_data_callback data_callback,
                        cubeb_state_callback state_callback,
@@ -42,6 +44,8 @@ public:
 private:
   virtual PAudioStreamChild*
   AllocPAudioStreamChild(const nsCString &aName,
+                         const cubeb_stream_params& aInputStreamParams,
+                         const cubeb_stream_params& aOutputStreamParams,
                          const int& aLatencyFrames,
                          int *aRet) override;
 
@@ -52,6 +56,8 @@ private:
   InitializeStreamSync(layers::SynchronousTask* aTask,
                        cubeb_stream** aStream,
                        char const* aName,
+                       cubeb_stream_params* aInputStreamParams,
+                       cubeb_stream_params* aOutputStreamParams,
                        const int& aLatencyFrames,
                        int* aRet);
 

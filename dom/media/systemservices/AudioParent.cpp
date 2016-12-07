@@ -10,6 +10,8 @@
 #include "mozilla/audio/AudioService.h"
 #include "mozilla/Unused.h"
 
+// TODO: validate pointer owner shipt etc... RefPtr usage etc
+
 namespace mozilla {
 namespace audio {
 

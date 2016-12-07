@@ -16,7 +16,11 @@ sync protocol PAudioContext
   manages PAudioStream;
 
 parent:
-  sync PAudioStream(nsCString name, int latency) returns (int ret);
+  sync PAudioStream(nsCString name,
+                    cubeb_stream_params inputParams,
+                    cubeb_stream_params outputParams,
+                    int latency)
+    returns (int ret);
 
 child:
   async __delete__();

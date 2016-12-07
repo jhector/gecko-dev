@@ -25,7 +25,10 @@ public:
 
   void ActorDestroy(ActorDestroyReason aWhy) override;
 
-  int Initialize(char const* aName, const int& aLatencyFrames);
+  int Initialize(char const* aName,
+                 const cubeb_stream_params& aInputParams,
+                 const cubeb_stream_params& aOutputParams,
+                 const int& aLatencyFrames);
 
   long DataCallback();
   void StateCallback();

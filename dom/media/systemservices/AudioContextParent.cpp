@@ -8,7 +8,6 @@
 
 #include "mozilla/audio/AudioStreamParent.h"
 #include "mozilla/Unused.h"
-#include "cubeb/cubeb.h"
 
 namespace mozilla {
 namespace audio {
@@ -32,6 +31,8 @@ AudioContextParent::ActorDestroy(ActorDestroyReason aWhy)
 
 PAudioStreamParent*
 AudioContextParent::AllocPAudioStreamParent(const nsCString& aName,
+                                            const cubeb_stream_params& aInputParams,
+                                            const cubeb_stream_params& aOutputParams,
                                             const int& aLatencyFrames,
                                             int *aRet)
 {
@@ -48,11 +49,16 @@ AudioContextParent::DeallocPAudioStreamParent(PAudioStreamParent* aActor)
 mozilla::ipc::IPCResult
 AudioContextParent::RecvPAudioStreamConstructor(PAudioStreamParent* aActor,
                                                 const nsCString& aName,
+                                                const cubeb_stream_params& aInputParams,
+                                                const cubeb_stream_params& aOutputParams,
                                                 const int& aLatencyFrames,
                                                 int* aRet)
 {
+  // TODO: aInputParams/aOutputParams can be null to indicate
+  // if the stream is input or output, we need to handle that case here somehow
+
   auto actor = static_cast<AudioStreamParent*>(aActor);
-  *aRet = actor->Initialize(aName.get(), aLatencyFrames);
+  *aRet = actor->Initialize(aName.get(), aInputParams, aOutputParams, aLatencyFrames);
 
   // In case of failure, we don't need the actor pair anymore,
   // delete them in a clean fashion

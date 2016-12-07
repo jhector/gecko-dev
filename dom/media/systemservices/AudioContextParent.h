@@ -10,8 +10,7 @@
 #include "mozilla/audio/PAudioContextParent.h"
 
 #include "mozilla/audio/PAudioStreamParent.h"
-
-class cubeb;
+#include "cubeb/cubeb.h"
 
 namespace mozilla {
 namespace audio {
@@ -32,6 +31,8 @@ public:
 private:
   virtual PAudioStreamParent*
   AllocPAudioStreamParent(const nsCString &aName,
+                          const cubeb_stream_params& aInputParams,
+                          const cubeb_stream_params& aOutputParams,
                           const int& aLatencyFrames,
                           int *aRet) override;
 
@@ -41,6 +42,8 @@ private:
   virtual mozilla::ipc::IPCResult
   RecvPAudioStreamConstructor(PAudioStreamParent* aActor,
                               const nsCString& aName,
+                              const cubeb_stream_params& aInputParams,
+                              const cubeb_stream_params& aOutputParams,
                               const int& aLatencyFrames,
                               int *aRet) override;
 

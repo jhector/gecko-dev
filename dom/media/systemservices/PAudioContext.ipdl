@@ -16,12 +16,14 @@ sync protocol PAudioContext
   manages PAudioStream;
 
 parent:
-  sync GetBackendId() returns (nsCString id);
   sync PAudioStream(nsCString name,
                     cubeb_stream_params inputParams,
                     cubeb_stream_params outputParams,
                     int latency)
     returns (int ret);
+
+  sync GetBackendId() returns (nsCString id);
+  sync GetMaxChannelCount() returns (uint32_t channels, int ret);
 
 child:
   async __delete__();

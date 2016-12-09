@@ -50,6 +50,9 @@ private:
   virtual mozilla::ipc::IPCResult
   RecvGetBackendId(nsCString *aRet) override;
 
+  virtual mozilla::ipc::IPCResult
+  RecvGetMaxChannelCount(uint32_t* aMaxChannel, int* aRet) override;
+
   cubeb* mContext;
 
   // TODO: store instance of AudioParent??

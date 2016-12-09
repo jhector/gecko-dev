@@ -84,5 +84,16 @@ AudioContextParent::RecvGetBackendId(nsCString* aRet)
   return IPC_OK();
 }
 
+mozilla::ipc::IPCResult
+AudioContextParent::RecvGetMaxChannelCount(uint32_t* aMaxChannel, int* aRet)
+{
+  if (!mContext) {
+    return IPC_OK(); // TODO: failure here?
+  }
+
+  *aRet = cubeb_get_max_channel_count(mContext, aMaxChannel);
+  return IPC_OK();
+}
+
 } // namespace audio
 } // namespace mozilla

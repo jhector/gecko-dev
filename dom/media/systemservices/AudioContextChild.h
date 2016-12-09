@@ -38,6 +38,7 @@ public:
                        void* aUserPtr);
 
   char const* GetBackendId();
+  int GetMaxChannelCount(uint32_t* aMaxChannel);
 
   MessageLoop* ServiceLoop();
 
@@ -63,7 +64,10 @@ private:
                        const int& aLatencyFrames,
                        int* aRet);
 
- void GetBackendIdSync(layers::SynchronousTask* aTask, nsCString* aBackend);
+  void GetBackendIdSync(layers::SynchronousTask* aTask, nsCString* aBackend);
+  void GetMaxChannelCountSync(layers::SynchronousTask* aTask,
+                              uint32_t* aMaxChannel,
+                              int* aRet);
 
  AudioChild* mAudioChild;
 };

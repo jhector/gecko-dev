@@ -346,9 +346,17 @@ uint32_t MaxNumberOfChannels()
 {
   cubeb* cubebContext = GetCubebContext();
   uint32_t maxNumberOfChannels;
+
+  // TODO: proper child process detection
+#if 0
   if (cubebContext &&
       cubeb_get_max_channel_count(cubebContext,
                                   &maxNumberOfChannels) == CUBEB_OK) {
+#else
+  if (cubebContext &&
+      mozilla::audio::AudioChild::Get()->GetMaxChannelCount(cubebContext,
+                                  &maxNumberOfChannels) == CUBEB_OK) {
+#endif
     return maxNumberOfChannels;
   }
 

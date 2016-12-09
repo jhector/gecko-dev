@@ -81,6 +81,33 @@ AudioContextChild::GetBackendIdSync(layers::SynchronousTask* aTask,
   Unused << SendGetBackendId(aBackend);
 }
 
+int
+AudioContextChild::GetMaxChannelCount(uint32_t* aMaxChannel)
+{
+  int ret = CUBEB_ERROR;
+  layers::SynchronousTask task("GetMaxChannelCount Lock");
+  ServiceLoop()->PostTask(NewNonOwningRunnableMethod
+                          <layers::SynchronousTask*,
+                           uint32_t*, int*>(this,
+                                 &AudioContextChild::GetMaxChannelCountSync,
+                                 &task, aMaxChannel, &ret));
+
+  task.Wait();
+
+  return ret;
+}
+
+void
+AudioContextChild::GetMaxChannelCountSync(layers::SynchronousTask* aTask,
+                                          uint32_t* aMaxChannel,
+                                          int* aRet)
+{
+  MOZ_RELEASE_ASSERT(MessageLoop::current() == ServiceLoop());
+
+  layers::AutoCompleteTask complete(aTask);
+  Unused << SendGetMaxChannelCount(aMaxChannel, aRet);
+}
+
 MessageLoop*
 AudioContextChild::ServiceLoop()
 {

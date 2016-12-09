@@ -35,6 +35,7 @@ public:
   // Proxy functions for cubeb API
   int InitializeContext(cubeb**, char const*);
   char const* GetBackendId(cubeb*);
+  int GetMaxChannelCount(cubeb*, uint32_t*);
 
   int InitializeStream(cubeb*,
                        cubeb_stream**,

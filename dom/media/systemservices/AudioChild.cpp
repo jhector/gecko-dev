@@ -88,6 +88,13 @@ AudioChild::GetBackendId(cubeb* aContext)
 }
 
 int
+AudioChild::GetMaxChannelCount(cubeb* aContext, uint32_t* aMaxChannel)
+{
+  // TODO: pointer check?
+  return aContext->actor->GetMaxChannelCount(aMaxChannel);
+}
+
+int
 AudioChild::InitializeStream(cubeb* aContext,
                              cubeb_stream** aStream,
                              char const* aName,

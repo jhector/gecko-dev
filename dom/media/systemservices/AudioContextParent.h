@@ -45,13 +45,18 @@ private:
                               const cubeb_stream_params& aInputParams,
                               const cubeb_stream_params& aOutputParams,
                               const int& aLatencyFrames,
-                              int *aRet) override;
+                              int* aRet) override;
 
   virtual mozilla::ipc::IPCResult
   RecvGetBackendId(nsCString *aRet) override;
 
   virtual mozilla::ipc::IPCResult
   RecvGetMaxChannelCount(uint32_t* aMaxChannel, int* aRet) override;
+
+  virtual mozilla::ipc::IPCResult
+  RecvGetMinLatency(const cubeb_stream_params& aParams,
+                    uint32_t* aLatency,
+                    int* aRet) override;
 
   cubeb* mContext;
 

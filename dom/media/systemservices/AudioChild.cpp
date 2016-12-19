@@ -95,6 +95,15 @@ AudioChild::GetMaxChannelCount(cubeb* aContext, uint32_t* aMaxChannel)
 }
 
 int
+AudioChild::GetMinLatency(cubeb* aContext,
+                          cubeb_stream_params aParams,
+                          uint32_t* aLatency)
+{
+  // TODO: pointer check?
+  return aContext->actor->GetMinLatency(aParams, aLatency);
+}
+
+int
 AudioChild::InitializeStream(cubeb* aContext,
                              cubeb_stream** aStream,
                              char const* aName,

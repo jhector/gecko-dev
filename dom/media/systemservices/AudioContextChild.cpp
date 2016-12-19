@@ -108,6 +108,34 @@ AudioContextChild::GetMaxChannelCountSync(layers::SynchronousTask* aTask,
   Unused << SendGetMaxChannelCount(aMaxChannel, aRet);
 }
 
+int
+AudioContextChild::GetMinLatency(cubeb_stream_params aParams, uint32_t* aLatency)
+{
+  int ret = CUBEB_ERROR;
+  layers::SynchronousTask task("GetMinLatency Lock");
+  ServiceLoop()->PostTask(NewNonOwningRunnableMethod
+                          <layers::SynchronousTask*,
+                           cubeb_stream_params, uint32_t*, int*>(this,
+                                 &AudioContextChild::GetMinLatencySync,
+                                 &task, aParams, aLatency, &ret));
+
+  task.Wait();
+
+  return ret;
+}
+
+void
+AudioContextChild::GetMinLatencySync(layers::SynchronousTask* aTask,
+                                     cubeb_stream_params aParams,
+                                     uint32_t* aLatency,
+                                     int* aRet)
+{
+  MOZ_RELEASE_ASSERT(MessageLoop::current() == ServiceLoop());
+
+  layers::AutoCompleteTask complete(aTask);
+  Unused << SendGetMinLatency(aParams, aLatency, aRet);
+}
+
 MessageLoop*
 AudioContextChild::ServiceLoop()
 {

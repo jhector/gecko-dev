@@ -95,5 +95,18 @@ AudioContextParent::RecvGetMaxChannelCount(uint32_t* aMaxChannel, int* aRet)
   return IPC_OK();
 }
 
+mozilla::ipc::IPCResult
+AudioContextParent::RecvGetMinLatency(const cubeb_stream_params& aParams,
+                                      uint32_t* aLatency,
+                                      int* aRet)
+{
+  if (!mContext) {
+    return IPC_OK(); // TODO: failure here?
+  }
+
+  *aRet = cubeb_get_min_latency(mContext, aParams, aLatency);
+  return IPC_OK();
+}
+
 } // namespace audio
 } // namespace mozilla

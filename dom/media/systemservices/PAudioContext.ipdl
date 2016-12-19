@@ -24,6 +24,7 @@ parent:
 
   sync GetBackendId() returns (nsCString id);
   sync GetMaxChannelCount() returns (uint32_t channels, int ret);
+  sync GetMinLatency(cubeb_stream_params params) returns (uint32_t latency, int ret);
 
 child:
   async __delete__();

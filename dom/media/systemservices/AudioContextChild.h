@@ -39,6 +39,7 @@ public:
 
   char const* GetBackendId();
   int GetMaxChannelCount(uint32_t* aMaxChannel);
+  int GetMinLatency(cubeb_stream_params aParams, uint32_t* aLatency);
 
   MessageLoop* ServiceLoop();
 
@@ -68,6 +69,10 @@ private:
   void GetMaxChannelCountSync(layers::SynchronousTask* aTask,
                               uint32_t* aMaxChannel,
                               int* aRet);
+  void GetMinLatencySync(layers::SynchronousTask* aTask,
+                         cubeb_stream_params aParams,
+                         uint32_t* aLatency,
+                         int* aRet);
 
  AudioChild* mAudioChild;
 };

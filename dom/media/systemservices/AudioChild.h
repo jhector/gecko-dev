@@ -36,6 +36,7 @@ public:
   int InitializeContext(cubeb**, char const*);
   char const* GetBackendId(cubeb*);
   int GetMaxChannelCount(cubeb*, uint32_t*);
+  int GetMinLatency(cubeb*, cubeb_stream_params, uint32_t*);
 
   int InitializeStream(cubeb*,
                        cubeb_stream**,
